@@ -43,14 +43,14 @@ public class LatLon extends Coordinate implements ILatLon {
 
     /**
      * Minimum difference in location to not be represented as the same position.
-     * The API returns 7 decimals.
+     * The API returns 7 decimals by default. LDBV requires 10 decimals.
      */
-    public static final double MAX_SERVER_PRECISION = 1e-7;
+    public static final double MAX_SERVER_PRECISION = 1e-10;
     /**
      * The inverse of the server precision
      * @see #MAX_SERVER_PRECISION
      */
-    public static final double MAX_SERVER_INV_PRECISION = 1e7;
+    public static final double MAX_SERVER_INV_PRECISION = 1e10;
 
     /**
      * The (0,0) coordinates.
