@@ -75,7 +75,7 @@ public class LatLon extends Coordinate implements ILatLon {
         // Don't use the localized decimal separator. This way we can present
         // a comma separated list of coordinates.
         cDdFormatter = (DecimalFormat) NumberFormat.getInstance(Locale.UK);
-        cDdFormatter.applyPattern("###0.0######");
+        cDdFormatter.applyPattern("###0.0#########");
         cDdHighPrecisionFormatter = (DecimalFormat) NumberFormat.getInstance(Locale.UK);
         cDdHighPrecisionFormatter.applyPattern("###0.0##########");
     }
