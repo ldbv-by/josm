@@ -17,7 +17,7 @@ public abstract class AbstractCoordinateFormat implements ICoordinateFormat {
     protected final String displayName;
 
     /** The normal number format for server precision coordinates */
-    protected static final DecimalFormat cDdFormatter = newUnlocalizedDecimalFormat("###0.0######");
+    protected static final DecimalFormat cDdFormatter = newUnlocalizedDecimalFormat("###0.0000000000");
     /** Character denoting South, as string */
     protected static final String SOUTH = trc("compass", "S");
     /** Character denoting North, as string */
