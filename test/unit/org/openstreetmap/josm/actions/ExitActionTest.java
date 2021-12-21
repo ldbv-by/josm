@@ -2,9 +2,11 @@
 package org.openstreetmap.josm.actions;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.awt.GraphicsEnvironment;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.openstreetmap.josm.TestUtils;
@@ -14,6 +16,7 @@ import org.openstreetmap.josm.gui.io.SaveLayersDialog;
 import org.openstreetmap.josm.gui.progress.swing.ProgressMonitorExecutor;
 import org.openstreetmap.josm.testutils.JOSMTestRules;
 import org.openstreetmap.josm.tools.ImageProvider;
+import org.openstreetmap.josm.tools.Utils;
 
 import com.ginsberg.junit.exit.ExpectSystemExitWithStatus;
 
@@ -33,6 +36,11 @@ final class ExitActionTest {
     @RegisterExtension
     @SuppressFBWarnings(value = "URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public JOSMTestRules test = new JOSMTestRules().main();
+
+    @BeforeAll
+    static void beforeAll() {
+        assumeTrue(Utils.getJavaVersion() < 18 || "allow".equals(System.getProperty("java.security.manager")));
+    }
 
     /**
      * Unit test of {@link ExitAction#actionPerformed}

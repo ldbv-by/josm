@@ -486,6 +486,7 @@ Build-Date: ${build.tstamp}
 	                    <sysproperty key="josm.home" value="${test.dir}/config/@{testfamily}-josm.home"/>
 	                    <sysproperty key="josm.test.data" value="${test.dir}/data"/>
 	                    <sysproperty key="java.awt.headless" value="${test.headless}"/>
+	                    <sysproperty key="java.security.manager" value="allow" if:set="isJava17" />
 	                    <sysproperty key="glass.platform" value="Monocle"/>
 	                    <sysproperty key="monocle.platform" value="Headless"/>
 	                    <sysproperty key="prism.order" value="sw"/>
@@ -1116,6 +1117,9 @@ Build-Date: ${build.tstamp}
                 <exclude name="org/apache/commons/compress/compressors/xz/XZUtils*"/>
                 <exclude name="org/apache/commons/compress/compressors/z/**"/>
                 <exclude name="org/apache/commons/compress/compressors/zstandard/**"/>
+                <exclude name="org/apache/commons/compress/java/util/jar/Pack200*"/>
+                <exclude name="org/apache/commons/compress/harmony/pack200/**"/>
+                <exclude name="org/apache/commons/compress/harmony/unpack200/**"/>
                 <exclude name="org/apache/commons/compress/parallel/**"/>
                 <exclude name="org/apache/commons/compress/utils/ArchiveUtils*"/>
                 <exclude name="org/apache/commons/jcs3/auxiliary/disk/jdbc/**"/>
@@ -1145,6 +1149,10 @@ Build-Date: ${build.tstamp}
         <ivy:report todir="${tools.dir}/ivy-report" graph="false"/>
     </target>
     <target name="ivy-checkdepsupdate" description="Display dependency updates on the console" depends="resolve">
+        <ivy:resolve log="quiet" file="${tools.ivy}" keep="true" conf="*"/>
+        <ivy:checkdepsupdate/>
+        <echo message="${line.separator}"/>
+        <ivy:resolve log="quiet" file="${base.dir}/ivy.xml" keep="true" conf="*"/>
         <ivy:checkdepsupdate/>
     </target>
     <target name="api-dependency-tree" description="Displays Ivy dependency tree for JOSM API" depends="resolve">

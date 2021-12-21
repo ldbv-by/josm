@@ -6,7 +6,7 @@
 
     <!-- Item chunks -->
     <chunk id="surface">
-        <combo key="surface" text="Surface" values="paved,unpaved,asphalt,concrete,concrete:plates,concrete:lanes,paving_stones,sett,cobblestone,grass_paver,compacted,fine_gravel,gravel,pebblestone,ground,mud,sand,grass,wood,metal" />
+        <combo key="surface" text="Surface" values="paved,unpaved,asphalt,concrete,concrete:plates,concrete:lanes,paving_stones,sett,cobblestone,unhewn_cobblestone,grass_paver,compacted,fine_gravel,gravel,pebblestone,ground,mud,sand,grass,wood,metal" />
     </chunk>
     <chunk id="surface_smoothness">
         <reference ref="surface" />
@@ -4230,7 +4230,7 @@
             <text key="name" text="Name" />
             <text key="artwork_subject" text="Subject" />
             <text key="artist_name" text="Artist Name" />
-            <combo key="material" text="Material" values="brass,bronze,concrete,glass,granite,metal,plastic,steel,stone,wood" />
+            <combo key="material" text="Material" values="aluminium,brass,bronze,ceramic,concrete,copper,glass,gold,granite,iron,marble,metal,plastic,steel,stone,wood" />
             <text key="start_date" text="Start date" />
         </item> <!-- Artwork -->
         <item name="Studio" icon="presets/service/studio.svg" type="node,closedway,multipolygon" preset_name_label="true">
@@ -5626,7 +5626,7 @@
         <item name="Residential Building" icon="presets/landmark/building.svg" type="node,closedway,multipolygon" preset_name_label="true">
             <link wiki="Key:building" />
             <space />
-            <combo key="building" text="Building" values="yes,residential,apartments,ger,house,hotel,hut,bungalow,dormitory,terrace,detached,farm" default="residential" match="keyvalue!" values_context="building" values_searchable="true" />
+            <combo key="building" text="Building" values="yes,residential,apartments,ger,house,hotel,hut,bungalow,dormitory,terrace,detached,farm,stilt_house" default="residential" match="keyvalue!" values_context="building" values_searchable="true" />
             <optional>
                 <text key="name" text="Name" />
                 <combo key="building:levels" text="Levels" values="1,2,3,4,5,6,7,8,9,10,11" text_context="building" />
@@ -8817,6 +8817,7 @@
             <link wiki="Tag:landuse=meadow" />
             <space />
             <key key="landuse" value="meadow" />
+            <combo key="meadow" text="Type of meadow" values="agricultural,pasture" values_context="meadow" />
             <reference ref="optional_name" />
         </item> <!-- Meadow -->
         <item name="Orchard" icon="presets/landuse/orchard.svg" type="closedway,multipolygon" preset_name_label="true">
