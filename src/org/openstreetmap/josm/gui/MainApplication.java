@@ -98,6 +98,7 @@ import org.openstreetmap.josm.data.projection.ProjectionRegistry;
 import org.openstreetmap.josm.data.projection.datum.NTV2GridShiftFileSource;
 import org.openstreetmap.josm.data.projection.datum.NTV2GridShiftFileWrapper;
 import org.openstreetmap.josm.data.projection.datum.NTV2Proj4DirGridShiftFileSource;
+import org.openstreetmap.josm.data.validation.ValidatorCLI;
 import org.openstreetmap.josm.data.validation.tests.MapCSSTagChecker;
 import org.openstreetmap.josm.gui.ProgramArguments.Option;
 import org.openstreetmap.josm.gui.SplashScreen.SplashProgressMonitor;
@@ -270,15 +271,14 @@ public class MainApplication {
 
         @Override
         public void processArguments(String[] argArray) {
-            ProgramArguments args = null;
-            // construct argument table
             try {
-                args = new ProgramArguments(argArray);
+                // construct argument table
+                ProgramArguments args = new ProgramArguments(argArray);
+                mainJOSM(args);
             } catch (IllegalArgumentException e) {
                 System.err.println(e.getMessage());
-                System.exit(1);
+                Lifecycle.exitJosm(true, 1);
             }
-            mainJOSM(args);
         }
     };
 
@@ -311,6 +311,7 @@ public class MainApplication {
         registerCLIModule(JOSM_CLI_MODULE);
         registerCLIModule(ProjectionCLI.INSTANCE);
         registerCLIModule(RenderingCLI.INSTANCE);
+        registerCLIModule(ValidatorCLI.INSTANCE);
     }
 
     /**
@@ -660,7 +661,8 @@ public class MainApplication {
                 tr("commands")+":\n"+
                 "\trunjosm     "+tr("launch JOSM (default, performed when no command is specified)")+'\n'+
                 "\trender      "+tr("render data and save the result to an image file")+'\n'+
-                "\tproject     "+tr("convert coordinates from one coordinate reference system to another")+"\n\n"+
+                "\tproject     " + tr("convert coordinates from one coordinate reference system to another")+ '\n' +
+                "\tvalidate    " + tr("validate data") + "\n\n" +
                 tr("For details on the {0} and {1} commands, run them with the {2} option.", "render", "project", "--help")+'\n'+
                 tr("The remainder of this help page documents the {0} command.", "runjosm")+"\n\n"+
                 tr("options")+":\n"+
@@ -1222,7 +1224,10 @@ public class MainApplication {
     static void loadLatePlugins(SplashScreen splash, SplashProgressMonitor monitor, Collection<PluginInformation> pluginsToLoad) {
         monitor.indeterminateSubTask(tr("Loading plugins"));
         PluginHandler.loadLatePlugins(splash, pluginsToLoad, monitor.createSubTaskMonitor(1, false));
-        GuiHelper.runInEDTAndWait(() -> toolbar.refreshToolbarControl());
+        GuiHelper.runInEDTAndWait(() -> {
+            toolbar.enableInfoAboutMissingAction();
+            toolbar.refreshToolbarControl();
+        });
     }
 
     private static void processOffline(ProgramArguments args) {
@@ -1234,7 +1239,7 @@ public class MainApplication {
                     Logging.log(Logging.LEVEL_ERROR,
                             tr("''{0}'' is not a valid value for argument ''{1}''. Possible values are {2}, possibly delimited by commas.",
                             s.toUpperCase(Locale.ENGLISH), Option.OFFLINE.getName(), Arrays.toString(OnlineResource.values())), e);
-                    System.exit(1);
+                    Lifecycle.exitJosm(true, 1);
                     return;
                 }
             }
@@ -1271,19 +1276,21 @@ public class MainApplication {
                                 /* in case of routing problems to the main openstreetmap domain don't enable IPv6 */
                                 for (InetAddress b : InetAddress.getAllByName("api.openstreetmap.org")) {
                                     if (b instanceof Inet6Address) {
-                                        if (b.isReachable(1000)) {
-                                            SSLSocketFactory.getDefault().createSocket(b, 443).close();
-                                        } else {
-                                            hasv6 = false;
-                                        }
+                                        //if (b.isReachable(1000)) {
+                                        SSLSocketFactory.getDefault().createSocket(b, 443).close();
+                                        //} else {
+                                        //    hasv6 = false;
+                                        //}
                                         break; /* we're done */
                                     }
                                 }
-                                Utils.updateSystemProperty("java.net.preferIPv6Addresses", "true");
-                                if (!wasv6) {
-                                    Logging.info(tr("Detected usable IPv6 network, preferring IPv6 over IPv4 after next restart."));
-                                } else {
-                                    Logging.info(tr("Detected usable IPv6 network, preferring IPv6 over IPv4."));
+                                if (hasv6) {
+                                    Utils.updateSystemProperty("java.net.preferIPv6Addresses", "true");
+                                    if (!wasv6) {
+                                        Logging.info(tr("Detected usable IPv6 network, preferring IPv6 over IPv4 after next restart."));
+                                    } else {
+                                        Logging.info(tr("Detected usable IPv6 network, preferring IPv6 over IPv4."));
+                                    }
                                 }
                             }
                             break; /* we're done */
@@ -1294,12 +1301,11 @@ public class MainApplication {
                     hasv6 = false;
                     Logging.trace(e);
                 }
+                Config.getPref().putBoolean("validated.ipv6", hasv6); // be sure it is stored before the restart!
                 if (wasv6 && !hasv6) {
                     Logging.info(tr("Detected no usable IPv6 network, preferring IPv4 over IPv6 after next restart."));
-                    Config.getPref().putBoolean("validated.ipv6", hasv6); // be sure it is stored before the restart!
                     RestartAction.restartJOSM();
                 }
-                Config.getPref().putBoolean("validated.ipv6", hasv6);
             }, "IPv6-checker").start();
         }
     }

@@ -4,9 +4,13 @@ package org.openstreetmap.josm.gui.layer;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
+import java.util.logging.Handler;
+import java.util.logging.LogRecord;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,6 +20,7 @@ import org.openstreetmap.josm.data.osm.DataSet;
 import org.openstreetmap.josm.gui.layer.MainLayerManager.ActiveLayerChangeEvent;
 import org.openstreetmap.josm.gui.layer.MainLayerManager.ActiveLayerChangeListener;
 import org.openstreetmap.josm.gui.util.GuiHelper;
+import org.openstreetmap.josm.tools.Logging;
 
 /**
  * Tests {@link MainLayerManager}.
@@ -52,6 +57,27 @@ class MainLayerManagerTest extends LayerManagerTest {
         public LayerPositionStrategy getDefaultLayerPosition() {
             return LayerPositionStrategy.afterLast(o -> true);
         }
+    }
+
+    protected static class LoggingHandler extends Handler {
+
+        private List<LogRecord> records = new ArrayList<>();
+
+        @Override
+        public void publish(LogRecord record) {
+            records.add(record);
+        }
+
+        @Override
+        public void flush() {}
+
+        @Override
+        public void close() throws SecurityException {}
+
+        public List<LogRecord> getRecords() {
+            return records;
+        }
+
     }
 
     @BeforeAll
@@ -144,8 +170,16 @@ class MainLayerManagerTest extends LayerManagerTest {
     @Test
     void testAddActiveLayerChangeListenerTwice() {
         CapturingActiveLayerChangeListener listener = new CapturingActiveLayerChangeListener();
+        LoggingHandler handler = new LoggingHandler();
+        Logging.getLogger().addHandler(handler);
+
         layerManagerWithActive.addActiveLayerChangeListener(listener);
-        assertThrows(IllegalArgumentException.class, () -> layerManagerWithActive.addActiveLayerChangeListener(listener));
+        assertTrue(handler.getRecords().isEmpty());
+
+        layerManagerWithActive.addActiveLayerChangeListener(listener);
+        assertTrue(handler.getRecords().get(1).getMessage().startsWith("Attempted to add listener that was already in list"));
+
+        Logging.getLogger().removeHandler(handler);
     }
 
     /**
@@ -171,8 +205,13 @@ class MainLayerManagerTest extends LayerManagerTest {
      */
     @Test
     void testRemoveActiveLayerChangeListenerNotInList() {
-        assertThrows(IllegalArgumentException.class,
-                () -> layerManagerWithActive.removeActiveLayerChangeListener(new CapturingActiveLayerChangeListener()));
+        LoggingHandler handler = new LoggingHandler();
+        Logging.getLogger().addHandler(handler);
+
+        layerManagerWithActive.removeActiveLayerChangeListener(new CapturingActiveLayerChangeListener());
+        assertTrue(handler.getRecords().get(1).getMessage().startsWith("Attempted to remove listener that was not in list"));
+
+        Logging.getLogger().removeHandler(handler);
     }
 
     /**

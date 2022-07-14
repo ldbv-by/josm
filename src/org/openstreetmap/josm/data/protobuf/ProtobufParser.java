@@ -3,11 +3,11 @@ package org.openstreetmap.josm.data.protobuf;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 
 import org.openstreetmap.josm.tools.Logging;
 
@@ -121,8 +121,9 @@ public class ProtobufParser implements AutoCloseable {
      */
     public Collection<ProtobufRecord> allRecords() throws IOException {
         Collection<ProtobufRecord> records = new ArrayList<>();
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(4);
         while (this.hasNext()) {
-            records.add(new ProtobufRecord(this));
+            records.add(new ProtobufRecord(byteArrayOutputStream, this));
         }
         return records;
     }
@@ -155,7 +156,7 @@ public class ProtobufParser implements AutoCloseable {
     public WireType next() throws IOException {
         this.inputStream.mark(16);
         try {
-            return WireType.values()[this.inputStream.read() << 3];
+            return WireType.getAllValues()[this.inputStream.read() << 3];
         } finally {
             this.inputStream.reset();
         }
@@ -196,36 +197,39 @@ public class ProtobufParser implements AutoCloseable {
     /**
      * Get the next delimited message ({@link WireType#LENGTH_DELIMITED})
      *
+     * @param byteArrayOutputStream A reusable stream to write bytes to. This can significantly reduce the allocations
+     *                              (150 MB to 95 MB in a test area).
      * @return The next length delimited message
      * @throws IOException - if an IO error occurs
      */
-    public byte[] nextLengthDelimited() throws IOException {
-        int length = convertByteArray(this.nextVarInt(), VAR_INT_BYTE_SIZE).intValue();
+    public byte[] nextLengthDelimited(ByteArrayOutputStream byteArrayOutputStream) throws IOException {
+        int length = convertByteArray(this.nextVarInt(byteArrayOutputStream), VAR_INT_BYTE_SIZE).intValue();
         return readNextBytes(length);
     }
 
     /**
      * Get the next var int ({@code WireType#VARINT})
      *
+     * @param byteArrayOutputStream A reusable stream to write bytes to. This can significantly reduce the allocations
+     *                              (150 MB to 95 MB in a test area).
      * @return The next var int ({@code int32}, {@code int64}, {@code uint32}, {@code uint64}, {@code bool}, {@code enum})
      * @throws IOException - if an IO error occurs
      */
-    public byte[] nextVarInt() throws IOException {
-        List<Byte> byteList = new ArrayList<>();
+    public byte[] nextVarInt(ByteArrayOutputStream byteArrayOutputStream) throws IOException {
+        // Using this reduces the allocations from 150 MB to 95 MB.
         int currentByte = this.nextByte();
         while ((byte) (currentByte & MOST_SIGNIFICANT_BYTE) == MOST_SIGNIFICANT_BYTE && currentByte > 0) {
             // Get rid of the leading bit (shift left 1, then shift right 1 unsigned)
-            byteList.add((byte) (currentByte ^ MOST_SIGNIFICANT_BYTE));
+            byteArrayOutputStream.write((currentByte ^ MOST_SIGNIFICANT_BYTE));
             currentByte = this.nextByte();
         }
         // The last byte doesn't drop the most significant bit
-        byteList.add((byte) currentByte);
-        byte[] byteArray = new byte[byteList.size()];
-        for (int i = 0; i < byteList.size(); i++) {
-            byteArray[i] = byteList.get(i);
+        byteArrayOutputStream.write(currentByte);
+        try {
+            return byteArrayOutputStream.toByteArray();
+        } finally {
+            byteArrayOutputStream.reset();
         }
-
-        return byteArray;
     }
 
     /**

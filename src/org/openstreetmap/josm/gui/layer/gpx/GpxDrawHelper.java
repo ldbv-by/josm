@@ -132,6 +132,7 @@ public class GpxDrawHelper implements SoMChangeListener, MapViewPaintable.LayerP
     /** Colors (without custom alpha channel, if given) for HDOP painting. **/
     private ColorScale hdopScale;
     private ColorScale qualityScale;
+    private ColorScale fixScale;
     private ColorScale dateScale;
     private ColorScale directionScale;
 
@@ -190,6 +191,44 @@ public class GpxDrawHelper implements SoMChangeListener, MapViewPaintable.LayerP
         Color.CYAN // PPP
     };
 
+    private static final String[] rtkLibQualityNames = {
+            tr("1 - Fixed"),
+            tr("2 - Float"),
+            tr("3 - Reserved"),
+            tr("4 - DGPS"),
+            tr("5 - Single"),
+            tr("6 - PPP")
+    };
+
+    /**
+     *  @see GpxConstants#FIX_VALUES
+     */
+    private static final Color[] gpsFixQualityColors = {
+            Color.MAGENTA, //None
+            new Color(255, 125, 0), //2D (orange-red)
+            Color.ORANGE, //3D
+            Color.CYAN, //DGPS
+            new Color(150, 255, 150), //PPS (light-green)
+            Color.GREEN, //RTK
+            Color.YELLOW, //Float RTK
+            Color.RED, //Estimated
+            Color.BLUE, //Manual
+            Color.GRAY //Simulated
+    };
+
+    private static final String[] gpsFixQualityNames = {
+            tr("None"),
+            tr("2D"),
+            tr("3D"),
+            tr("DGPS"),
+            tr("PPS"),
+            tr("RTK"),
+            tr("Float RTK"),
+            tr("Estimated"),
+            tr("Manual"),
+            tr("Simulated")
+    };
+
     // user defined heatmap color
     private Color[] heatMapLutColor = createColorLut(0, Color.BLACK, Color.WHITE);
 
@@ -201,7 +240,8 @@ public class GpxDrawHelper implements SoMChangeListener, MapViewPaintable.LayerP
         velocityScale = ColorScale.createHSBScale(256);
         /** Colors (without custom alpha channel, if given) for HDOP painting. **/
         hdopScale = ColorScale.createHSBScale(256).makeReversed().addTitle(tr("HDOP"));
-        qualityScale = ColorScale.createFixedScale(rtkLibQualityColors).addTitle(tr("Quality"));
+        qualityScale = ColorScale.createFixedScale(rtkLibQualityColors).addTitle(tr("Quality")).addColorBarTitles(rtkLibQualityNames);
+        fixScale = ColorScale.createFixedScale(gpsFixQualityColors).addTitle(tr("GPS fix")).addColorBarTitles(gpsFixQualityNames);
         dateScale = ColorScale.createHSBScale(256).addTitle(tr("Time"));
         directionScale = ColorScale.createCyclicScale(256).setIntervalCount(4).addTitle(tr("Direction"));
 
@@ -246,7 +286,11 @@ public class GpxDrawHelper implements SoMChangeListener, MapViewPaintable.LayerP
         /**
          * Color by quality (RTKLib)
          */
-        QUALITY;
+        QUALITY,
+        /**
+         * Color by GPS fix
+         */
+        FIX;
 
         static ColorMode fromIndex(final int index) {
             return values()[index];
@@ -347,6 +391,7 @@ public class GpxDrawHelper implements SoMChangeListener, MapViewPaintable.LayerP
         dateScale.setNoDataColor(neutralColor);
         hdopScale.setNoDataColor(neutralColor);
         qualityScale.setNoDataColor(neutralColor);
+        fixScale.setNoDataColor(neutralColor);
         directionScale.setNoDataColor(neutralColor);
 
         largesize += lineWidth;
@@ -521,7 +566,7 @@ public class GpxDrawHelper implements SoMChangeListener, MapViewPaintable.LayerP
                             continue;
                         }
                         if (oldWp != null && trkPnt.getTimeInMillis() > oldWp.getTimeInMillis()) {
-                            double vel = trkPnt.getCoor().greatCircleDistance(oldWp.getCoor())
+                            double vel = trkPnt.greatCircleDistance(oldWp)
                                     / (trkPnt.getTime() - oldWp.getTime());
                             velocities.add(vel);
                         }
@@ -562,6 +607,7 @@ public class GpxDrawHelper implements SoMChangeListener, MapViewPaintable.LayerP
             velocityScale.setRange(0, velocityTune);
             hdopScale.setRange(0, hdoprange);
             qualityScale.setRange(1, rtkLibQualityColors.length);
+            fixScale.setRange(0, gpsFixQualityColors.length);
         }
         double now = System.currentTimeMillis()/1000.0;
         if (colored == ColorMode.TIME) {
@@ -577,9 +623,8 @@ public class GpxDrawHelper implements SoMChangeListener, MapViewPaintable.LayerP
                 oldWp = null;
             }
             for (WayPoint trkPnt : segment) {
-                LatLon c = trkPnt.getCoor();
                 trkPnt.customColoring = segment.getColor();
-                if (Double.isNaN(c.lat()) || Double.isNaN(c.lon())) {
+                if (Double.isNaN(trkPnt.lat()) || Double.isNaN(trkPnt.lon())) {
                     continue;
                 }
                 // now we are sure some color will be assigned
@@ -589,9 +634,17 @@ public class GpxDrawHelper implements SoMChangeListener, MapViewPaintable.LayerP
                     color = hdopScale.getColor((Float) trkPnt.get(GpxConstants.PT_HDOP));
                 } else if (colored == ColorMode.QUALITY) {
                     color = qualityScale.getColor((Integer) trkPnt.get(GpxConstants.RTKLIB_Q));
+                } else if (colored == ColorMode.FIX) {
+                    Object fixval = trkPnt.get(GpxConstants.PT_FIX);
+                    if (fixval != null) {
+                        int fix = GpxConstants.FIX_VALUES.indexOf(fixval);
+                        if (fix >= 0) {
+                            color = fixScale.getColor(fix);
+                        }
+                    }
                 }
                 if (oldWp != null) { // other coloring modes need segment for calcuation
-                    double dist = c.greatCircleDistance(oldWp.getCoor());
+                    double dist = trkPnt.greatCircleDistance(oldWp);
                     boolean noDraw = false;
                     switch (colored) {
                     case VELOCITY:
@@ -603,7 +656,7 @@ public class GpxDrawHelper implements SoMChangeListener, MapViewPaintable.LayerP
                         }
                         break;
                     case DIRECTION:
-                        double dirColor = oldWp.getCoor().bearing(trkPnt.getCoor());
+                        double dirColor = oldWp.bearing(trkPnt);
                         color = directionScale.getColor(dirColor);
                         break;
                     case TIME:
@@ -619,7 +672,7 @@ public class GpxDrawHelper implements SoMChangeListener, MapViewPaintable.LayerP
                     }
                     if (!noDraw && (!segment.isUnordered() || !data.fromServer) && (maxLineLength == -1 || dist <= maxLineLength)) {
                         trkPnt.drawLine = true;
-                        double bearing = oldWp.getCoor().bearing(trkPnt.getCoor());
+                        double bearing = oldWp.bearing(trkPnt);
                         trkPnt.dir = ((int) (bearing / Math.PI * 4 + 1.5)) % 8;
                     } else {
                         trkPnt.drawLine = false;
@@ -1516,6 +1569,8 @@ public class GpxDrawHelper implements SoMChangeListener, MapViewPaintable.LayerP
             hdopScale.drawColorBar(g, w-30, 50, 20, 100, 1.0);
         } else if (colored == ColorMode.QUALITY) {
             qualityScale.drawColorBar(g, w-30, 50, 20, 100, 1.0);
+        } else if (colored == ColorMode.FIX) {
+            fixScale.drawColorBar(g, w-30, 50, 20, 175, 1.0);
         } else if (colored == ColorMode.VELOCITY) {
             SystemOfMeasurement som = SystemOfMeasurement.getSystemOfMeasurement();
             velocityScale.drawColorBar(g, w-30, 50, 20, 100, som.speedValue);

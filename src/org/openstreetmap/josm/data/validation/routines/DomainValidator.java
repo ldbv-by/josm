@@ -296,7 +296,7 @@ public final class DomainValidator extends AbstractValidator {
 
     // WARNING: this array MUST be sorted, otherwise it cannot be searched reliably using binary search
     private static final String[] GENERIC_TLDS = {
-        // Taken from Version 2021102900, Last Updated Fri Oct 29 07:07:01 2021 UTC
+        // Taken from Version 2022042200, Last Updated Fri Apr 22 07:07:01 2022 UTC
         "aaa", // aaa American Automobile Association, Inc.
         "aarp", // aarp AARP
         "abarth", // abarth Fiat Chrysler Automobiles N.V.
@@ -441,7 +441,6 @@ public final class DomainValidator extends AbstractValidator {
         "broker", // broker DOTBROKER REGISTRY LTD
         "brother", // brother Brother Industries, Ltd.
         "brussels", // brussels DNS.be vzw
-        "budapest", // budapest Top Level Domain Holdings Limited
         "bugatti", // bugatti Bugatti International SA
         "build", // build Plan Bee LLC
         "builders", // builders Atomic Madison, LLC
@@ -548,7 +547,6 @@ public final class DomainValidator extends AbstractValidator {
         "crs", // crs Federated Co-operatives Limited
         "cruise", // cruise Viking River Cruises (Bermuda) Ltd.
         "cruises", // cruises Spring Way, LLC
-        "csc", // csc Alliance-One Services, Inc.
         "cuisinella", // cuisinella SALM S.A.S.
         "cymru", // cymru Nominet UK
         "cyou", // cyou Beijing Gamease Age Digital Technology Co., Ltd.
@@ -835,6 +833,7 @@ public final class DomainValidator extends AbstractValidator {
         "kerryproperties", // kerryproperties Kerry Trading Co. Limited
         "kfh", // kfh Kuwait Finance House
         "kia", // kia KIA MOTORS CORPORATION
+        "kids", // kids DotKids Foundation Limited
         "kim", // kim Afilias Limited
         "kinder", // kinder Ferrero Trading Lux S.A.
         "kindle", // kindle Amazon Registry Service, Inc.
@@ -886,7 +885,6 @@ public final class DomainValidator extends AbstractValidator {
         "lipsy", // lipsy Lipsy Ltd
         "live", // live United TLD Holdco Ltd.
         "living", // living Lifestyle Domain Holdings, Inc.
-        "lixil", // lixil LIXIL Group Corporation
         "llc", // llc Afilias plc
         "llp", // llp Dot Registry LLC
         "loan", // loan dot Loan Limited

@@ -125,6 +125,15 @@ public abstract class HttpClient {
     }
 
     /**
+     * Removed privacy related parts form output URL
+     * @param url Unmodified URL
+     * @return Stripped URL (privacy related issues removed)
+     */
+    private String stripUrl(URL url) {
+        return url.toString().replaceAll("(token|key|connectId)=[^&]+", "$1=...stripped...");
+    }
+
+    /**
      * Opens the HTTP connection.
      * @param progressMonitor progress monitor
      * @return HTTP response
@@ -148,7 +157,7 @@ public abstract class HttpClient {
                 cr = performConnection();
                 final boolean hasReason = !Utils.isEmpty(reasonForRequest);
                 logRequest("{0} {1}{2} -> {3} {4} ({5}{6})",
-                        getRequestMethod(), getURL(), hasReason ? (" (" + reasonForRequest + ')') : "",
+                        getRequestMethod(), stripUrl(getURL()), hasReason ? (" (" + reasonForRequest + ')') : "",
                         cr.getResponseVersion(), cr.getResponseCode(),
                         stopwatch,
                         cr.getContentLengthLong() > 0
@@ -166,7 +175,7 @@ public abstract class HttpClient {
                     DefaultAuthenticator.getInstance().addFailedCredentialHost(url.getHost());
                 }
             } catch (IOException | RuntimeException e) {
-                logRequest("{0} {1} -> !!! ({2})", requestMethod, url, stopwatch);
+                logRequest("{0} {1} -> !!! ({2})", requestMethod, stripUrl(url), stopwatch);
                 Logging.warn(e);
                 //noinspection ThrowableResultOfMethodCallIgnored
                 NetworkManager.addNetworkError(url, Utils.getRootCause(e));
@@ -179,9 +188,16 @@ public abstract class HttpClient {
                     throw new IOException(tr("Unexpected response from HTTP server. Got {0} response without ''Location'' header." +
                             " Can''t redirect. Aborting.", cr.getResponseCode()));
                 } else if (maxRedirects > 0) {
+                    final URL oldUrl = url;
                     url = new URL(url, redirectLocation);
                     maxRedirects--;
                     logRequest(tr("Download redirected to ''{0}''", redirectLocation));
+                    // Fix JOSM #21935: Avoid leaking `Authorization` header on redirects.
+                    if (!Objects.equals(oldUrl.getHost(), this.url.getHost()) && this.getRequestHeader("Authorization") != null) {
+                        logRequest(tr("Download redirected to different host (''{0}'' -> ''{1}''), removing authorization headers",
+                                oldUrl.getHost(), url.getHost()));
+                        this.headers.remove("Authorization");
+                    }
                     response = connect();
                     successfulConnection = true;
                     return response;
