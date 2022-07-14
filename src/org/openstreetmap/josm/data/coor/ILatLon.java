@@ -27,9 +27,9 @@ import org.openstreetmap.josm.tools.Logging;
 public interface ILatLon {
     /**
      * Minimum difference in location to not be represented as the same position.
-     * The API returns 7 decimals.
+     * The API returns 7 decimals. LDBV requires 10 decimals.
      */
-    double MAX_SERVER_PRECISION = 1e-7;
+    double MAX_SERVER_PRECISION = 1e-10;
 
     /**
      * Returns the longitude, i.e., the east-west position in degrees.
