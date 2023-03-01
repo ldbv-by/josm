@@ -11,6 +11,7 @@ import java.util.stream.Stream;
 
 import org.openstreetmap.josm.data.SystemOfMeasurement;
 import org.openstreetmap.josm.data.conflict.Conflict;
+import org.openstreetmap.josm.data.coor.EastNorth;
 import org.openstreetmap.josm.data.coor.ILatLon;
 import org.openstreetmap.josm.data.coor.LatLon;
 import org.openstreetmap.josm.data.coor.conversion.AbstractCoordinateFormat;
@@ -32,6 +33,7 @@ import org.openstreetmap.josm.data.projection.proj.TransverseMercator;
 import org.openstreetmap.josm.data.projection.proj.TransverseMercator.Hemisphere;
 import org.openstreetmap.josm.tools.Geometry;
 import org.openstreetmap.josm.tools.Pair;
+import org.openstreetmap.josm.tools.Utils;
 
 /**
  * Textual representation of primitive contents, used in {@code InspectPrimitiveDialog}.
@@ -171,12 +173,27 @@ public class InspectPrimitiveDataText {
             addCoordinates((INode) o);
         } else if (o instanceof IWay) {
             addBbox(o);
-            add(tr("Centroid: "), toStringCSV(false,
-                    ProjectionRegistry.getProjection().eastNorth2latlon(Geometry.getCentroid(((IWay<?>) o).getNodes()))));
+            final EastNorth centroid = Geometry.getCentroid(((IWay<?>) o).getNodes());
+            final String centroidMessage;
+            if (centroid == null) {
+                centroidMessage = tr("unknown");
+            } else {
+                centroidMessage = toStringCSV(false,
+                        ProjectionRegistry.getProjection().eastNorth2latlon(centroid));
+            }
+            add(tr("Centroid: "), centroidMessage);
             if (o instanceof Way) {
-                double dist = ((Way) o).getLength();
-                String distText = SystemOfMeasurement.getSystemOfMeasurement().getDistText(dist);
-                add(tr("Length: {0}", distText));
+                double length = ((Way) o).getLength();
+                String lenText = SystemOfMeasurement.getSystemOfMeasurement().getDistText(length);
+                add(tr("Length: {0}", lenText));
+
+                double avgNodeDistance = length / (((Way) o).getNodesCount() - 1);
+                String nodeDistText = SystemOfMeasurement.getSystemOfMeasurement().getDistText(avgNodeDistance);
+                add(tr("Average segment length: {0}", nodeDistText));
+
+                double stdDev = Utils.getStandardDeviation(((Way) o).getSegmentLengths(), avgNodeDistance);
+                String stdDevText = SystemOfMeasurement.getSystemOfMeasurement().getDistText(stdDev);
+                add(tr("Standard deviation: {0}", stdDevText));
             }
             if (o instanceof Way && ((Way) o).concernsArea() && ((Way) o).isClosed()) {
                 double area = Geometry.closedWayArea((Way) o);
