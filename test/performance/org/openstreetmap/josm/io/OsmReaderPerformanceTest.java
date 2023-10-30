@@ -6,15 +6,13 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
-import org.openstreetmap.josm.JOSMFixture;
 import org.openstreetmap.josm.PerformanceTestUtils;
 import org.openstreetmap.josm.PerformanceTestUtils.PerformanceTestTimer;
 import org.openstreetmap.josm.data.osm.DataSet;
@@ -26,17 +24,9 @@ import org.openstreetmap.josm.data.osm.DataSet;
  *
  * @author Michael Zangl
  */
-@Timeout(value = 15*60, unit = TimeUnit.SECONDS)
+@Timeout(value = 15, unit = TimeUnit.MINUTES)
 class OsmReaderPerformanceTest {
     private static final int TIMES = 4;
-
-    /**
-     * Prepare the test.
-     */
-    @BeforeAll
-    public static void createJOSMFixture() {
-        JOSMFixture.createPerformanceTestFixture().init(true);
-    }
 
     /**
      * Simulates a plain read of a .osm.bz2 file (from memory)
@@ -72,7 +62,7 @@ class OsmReaderPerformanceTest {
 
     private InputStream loadFile(boolean decompressBeforeRead) throws IOException {
         File file = new File(PerformanceTestUtils.DATA_FILE);
-        try (InputStream is = decompressBeforeRead ? Compression.getUncompressedFileInputStream(file) : new FileInputStream(file)) {
+        try (InputStream is = decompressBeforeRead ? Compression.getUncompressedFileInputStream(file) : Files.newInputStream(file.toPath())) {
             ByteArrayOutputStream temporary = new ByteArrayOutputStream();
             byte[] readBuffer = new byte[4096];
             int readBytes = 0;

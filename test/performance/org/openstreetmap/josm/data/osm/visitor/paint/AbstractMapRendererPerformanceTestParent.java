@@ -16,7 +16,6 @@ import javax.imageio.ImageIO;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
-import org.openstreetmap.josm.JOSMFixture;
 import org.openstreetmap.josm.PerformanceTestUtils;
 import org.openstreetmap.josm.data.Bounds;
 import org.openstreetmap.josm.data.osm.DataSet;
@@ -24,13 +23,17 @@ import org.openstreetmap.josm.gui.NavigatableComponent;
 import org.openstreetmap.josm.gui.progress.NullProgressMonitor;
 import org.openstreetmap.josm.io.Compression;
 import org.openstreetmap.josm.io.OsmReader;
+import org.openstreetmap.josm.testutils.annotations.Projection;
+import org.openstreetmap.josm.testutils.annotations.Territories;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /**
  * Abstract superclass of {@code StyledMapRendererPerformanceTest} and {@code WireframeMapRendererPerformanceTest}.
  */
-@Timeout(value = 15*60, unit = TimeUnit.SECONDS)
+@Projection
+@Territories
+@Timeout(value = 15, unit = TimeUnit.MINUTES)
 abstract class AbstractMapRendererPerformanceTestParent {
 
     private static final int IMG_WIDTH = 1400;
@@ -48,7 +51,6 @@ abstract class AbstractMapRendererPerformanceTestParent {
     private static DataSet dsCity;
 
     protected static void load() throws Exception {
-        JOSMFixture.createPerformanceTestFixture().init(true);
         img = new BufferedImage(IMG_WIDTH, IMG_HEIGHT, BufferedImage.TYPE_INT_ARGB);
         g = (Graphics2D) img.getGraphics();
         g.setClip(0, 0, IMG_WIDTH, IMG_HEIGHT);
@@ -78,7 +80,7 @@ abstract class AbstractMapRendererPerformanceTestParent {
         dsCity = PerformanceTestUtils.getNeubrandenburgDataSet();
         try (InputStream fisR = Files.newInputStream(Paths.get("nodist/data/restriction.osm"));
              InputStream fisM = Files.newInputStream(Paths.get("nodist/data/multipolygon.osm"));
-             InputStream fisO = Compression.getUncompressedFileInputStream(new File("nodist/data/overpass-download.osm.bz2"));) {
+             InputStream fisO = Compression.getUncompressedFileInputStream(new File("nodist/data/overpass-download.osm.bz2"))) {
             dsRestriction = OsmReader.parseDataSet(fisR, NullProgressMonitor.INSTANCE);
             dsMultipolygon = OsmReader.parseDataSet(fisM, NullProgressMonitor.INSTANCE);
             dsOverpass = OsmReader.parseDataSet(fisO, NullProgressMonitor.INSTANCE);
@@ -124,10 +126,10 @@ abstract class AbstractMapRendererPerformanceTestParent {
         test(850, dsMultipolygon, new Bounds(-90, -180, 90, 180));
     }
 
-    @Test
     /**
      * Complex polygon (Lake Ontario) with small download area.
      */
+    @Test
     void testOverpassDownload() throws Exception {
         test(20, dsOverpass, new Bounds(43.4510496, -76.536684, 43.4643202, -76.4954853));
     }

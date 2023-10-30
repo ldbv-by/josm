@@ -72,6 +72,7 @@ import org.openstreetmap.josm.data.osm.OsmDataManager;
 import org.openstreetmap.josm.data.osm.OsmPrimitive;
 import org.openstreetmap.josm.data.osm.OsmPrimitiveType;
 import org.openstreetmap.josm.data.osm.Tag;
+import org.openstreetmap.josm.data.osm.Tagged;
 import org.openstreetmap.josm.data.osm.search.SearchCompiler;
 import org.openstreetmap.josm.data.osm.search.SearchParseError;
 import org.openstreetmap.josm.data.osm.search.SearchSetting;
@@ -81,6 +82,7 @@ import org.openstreetmap.josm.data.preferences.IntegerProperty;
 import org.openstreetmap.josm.data.preferences.ListProperty;
 import org.openstreetmap.josm.data.preferences.StringProperty;
 import org.openstreetmap.josm.data.tagging.ac.AutoCompletionItem;
+import org.openstreetmap.josm.gui.ConditionalOptionPaneUtil;
 import org.openstreetmap.josm.gui.ExtendedDialog;
 import org.openstreetmap.josm.gui.IExtendedDialog;
 import org.openstreetmap.josm.gui.MainApplication;
@@ -88,6 +90,7 @@ import org.openstreetmap.josm.gui.tagging.ac.AutoCompComboBox;
 import org.openstreetmap.josm.gui.tagging.ac.AutoCompEvent;
 import org.openstreetmap.josm.gui.tagging.ac.AutoCompListener;
 import org.openstreetmap.josm.gui.tagging.ac.AutoCompletionManager;
+import org.openstreetmap.josm.gui.tagging.presets.items.KeyedItem;
 import org.openstreetmap.josm.gui.util.GuiHelper;
 import org.openstreetmap.josm.gui.util.WindowGeometry;
 import org.openstreetmap.josm.gui.widgets.JosmListCellRenderer;
@@ -276,8 +279,9 @@ public class TagEditHelper {
             return;
         try {
             activeDataSet.beginUpdate();
-            sel = OsmDataManager.getInstance().getInProgressSelection();
-            if (Utils.isEmpty(sel))
+            Collection<OsmPrimitive> selection = OsmDataManager.getInstance().getInProgressSelection();
+            this.sel = selection;
+            if (Utils.isEmpty(selection))
                 return;
 
             final AddTagsDialog addDialog = getAddTagsDialog();
@@ -285,10 +289,12 @@ public class TagEditHelper {
             addDialog.showDialog();
 
             addDialog.destroyActions();
-            if (addDialog.getValue() == 1)
-                addDialog.performTagAdding();
-            else
+            // Remote control can cause the selection to change, see #23191.
+            if (addDialog.getValue() == 1 && (selection == sel || warnSelectionChanged())) {
+                addDialog.performTagAdding(selection);
+            } else {
                 addDialog.undoAllTagsAdding();
+            }
         } finally {
             activeDataSet.endUpdate();
         }
@@ -371,7 +377,7 @@ public class TagEditHelper {
      */
     public void loadTagsIfNeeded() {
         loadTagsToIgnore();
-        if (PROPERTY_REMEMBER_TAGS.get() && recentTags.isEmpty()) {
+        if (Boolean.TRUE.equals(PROPERTY_REMEMBER_TAGS.get()) && recentTags.isEmpty()) {
             recentTags.loadFromPreference(PROPERTY_RECENT_TAGS);
         }
     }
@@ -405,7 +411,7 @@ public class TagEditHelper {
      * Store recently used tags in preferences if needed.
      */
     public void saveTagsIfNeeded() {
-        if (PROPERTY_REMEMBER_TAGS.get() && !recentTags.isEmpty()) {
+        if (Boolean.TRUE.equals(PROPERTY_REMEMBER_TAGS.get()) && !recentTags.isEmpty()) {
             recentTags.saveToPreference(PROPERTY_RECENT_TAGS);
         }
     }
@@ -447,6 +453,18 @@ public class TagEditHelper {
         if (selectedItem != null)
             return selectedItem.toString();
         return getEditItem(cb);
+    }
+
+    /**
+     * Warn user about a selection change
+     * @return {@code true} if the user wants to apply the tag change to the old selection
+     */
+    private static boolean warnSelectionChanged() {
+        return ConditionalOptionPaneUtil.showConfirmationDialog("properties.selection-changed",
+                MainApplication.getMainFrame(),
+                tr("Data selection has changed since the dialog was opened"),
+                tr("Apply tag change to old selection?"),
+                JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, JOptionPane.YES_OPTION);
     }
 
     /**
@@ -504,12 +522,12 @@ public class TagEditHelper {
             JPanel p = new JPanel(new GridBagLayout()) {
                 /**
                  * This hack allows the comboboxes to have their own orientation.
-                 *
+                 * <p>
                  * The problem is that
                  * {@link org.openstreetmap.josm.gui.ExtendedDialog#showDialog ExtendedDialog} calls
                  * {@code applyComponentOrientation} very late in the dialog construction process
                  * thus overwriting the orientation the components have chosen for themselves.
-                 *
+                 * <p>
                  * This stops the propagation of {@code applyComponentOrientation}, thus all
                  * components may (and have to) set their own orientation.
                  */
@@ -537,7 +555,7 @@ public class TagEditHelper {
 
             List<AutoCompletionItem> valueList = autocomplete.getTagValues(getAutocompletionKeys(key), usedValuesAwareComparator);
 
-            final String selection = m.size() != 1 ? tr("<different>") : m.entrySet().iterator().next().getKey();
+            final String selection = m.size() != 1 ? KeyedItem.DIFFERENT_I18N : m.entrySet().iterator().next().getKey();
 
             values = new AutoCompComboBox<>();
             values.getModel().setComparator(Comparator.naturalOrder());
@@ -585,7 +603,7 @@ public class TagEditHelper {
                 newkey = key;
                 value = null; // delete the key instead
             }
-            if (key.equals(newkey) && tr("<different>").equals(value))
+            if (key.equals(newkey) && KeyedItem.DIFFERENT_I18N.equals(value))
                 return;
             if (key.equals(newkey) || value == null) {
                 UndoRedoHandler.getInstance().add(new ChangePropertyCommand(sel, newkey, value));
@@ -605,7 +623,7 @@ public class TagEditHelper {
                 }
                 Collection<Command> commands = new ArrayList<>();
                 commands.add(new ChangePropertyCommand(sel, key, null));
-                if (value.equals(tr("<different>"))) {
+                if (value.equals(KeyedItem.DIFFERENT_I18N)) {
                     String newKey = newkey;
                     sel.stream()
                             .filter(osm -> osm.hasKey(key))
@@ -792,12 +810,12 @@ public class TagEditHelper {
             mainPanel = new JPanel(new GridBagLayout()) {
                 /**
                  * This hack allows the comboboxes to have their own orientation.
-                 *
+                 * <p>
                  * The problem is that
                  * {@link org.openstreetmap.josm.gui.ExtendedDialog#showDialog ExtendedDialog} calls
                  * {@code applyComponentOrientation} very late in the dialog construction process
                  * thus overwriting the orientation the components have chosen for themselves.
-                 *
+                 * <p>
                  * This stops the propagation of {@code applyComponentOrientation}, thus all
                  * components may (and have to) set their own orientation.
                  */
@@ -1185,11 +1203,23 @@ public class TagEditHelper {
          * Read tags from comboboxes and add it to all selected objects
          */
         public final void performTagAdding() {
+            Collection<OsmPrimitive> selection = sel;
+            if (!Utils.isEmpty(selection)) {
+                performTagAdding(selection);
+            }
+        }
+
+        /**
+         * Read tags from comboboxes and add it to all selected objects
+         * @param selection The selection to perform tag adding on
+         * @since 18842
+         */
+        private void performTagAdding(Collection<OsmPrimitive> selection) {
             String key = getEditItem(keys);
             String value = getEditItem(values);
             if (key.isEmpty() || value.isEmpty())
                 return;
-            for (OsmPrimitive osm : sel) {
+            for (Tagged osm : selection) {
                 String val = osm.get(key);
                 if (val != null && !val.equals(value)) {
                     String valueHtmlString = Utils.joinAsHtmlUnorderedList(Arrays.asList("<strike>" + val + "</strike>", value));
@@ -1201,10 +1231,10 @@ public class TagEditHelper {
                 }
             }
             recentTags.add(new Tag(key, value));
-            valueCount.put(key, new TreeMap<String, Integer>());
+            valueCount.put(key, new TreeMap<>());
             AutoCompletionManager.rememberUserInput(key, value, false);
             commandCount++;
-            UndoRedoHandler.getInstance().add(new ChangePropertyCommand(sel, key, value));
+            UndoRedoHandler.getInstance().add(new ChangePropertyCommand(selection, key, value));
             changedKey = key;
             clearEntries();
         }
@@ -1214,6 +1244,9 @@ public class TagEditHelper {
             values.getEditor().setItem("");
         }
 
+        /**
+         * Undo all tag add commands that this dialog has created
+         */
         public void undoAllTagsAdding() {
             UndoRedoHandler.getInstance().undo(commandCount);
         }

@@ -87,8 +87,7 @@ public class ExtendedDialogMocker extends BaseDialogMockUp<ExtendedDialog> {
     }
 
     protected String getString(final ExtendedDialog instance) {
-        return Optional.ofNullable(this.simpleStringContentMemo.get(instance))
-            .orElseGet(() -> instance.toString());
+        return Optional.ofNullable(this.simpleStringContentMemo.get(instance)).orElseGet(instance::toString);
     }
 
     protected int getMockResult(final ExtendedDialog instance) {
@@ -174,17 +173,8 @@ public class ExtendedDialogMocker extends BaseDialogMockUp<ExtendedDialog> {
     }
 
     @Mock
-    private void setupDialog(final Invocation invocation) {
-        if (!GraphicsEnvironment.isHeadless()) {
-            invocation.proceed();
-        }
-        // else do nothing - WindowMocker-ed Windows doesn't work well enough for some of the
-        // component constructions
-    }
-
-    @Mock
     private void setVisible(final Invocation invocation, final boolean value) throws Throwable {
-        if (value == true) {
+        if (value) {
             try {
                 final ExtendedDialog instance = invocation.getInvokedInstance();
                 this.act(instance);

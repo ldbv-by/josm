@@ -10,32 +10,22 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import org.junit.Assert;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 import org.openstreetmap.josm.TestUtils;
 import org.openstreetmap.josm.data.osm.OsmPrimitive;
 import org.openstreetmap.josm.data.osm.OsmUtils;
 import org.openstreetmap.josm.data.osm.Tag;
 import org.openstreetmap.josm.data.validation.Severity;
 import org.openstreetmap.josm.data.validation.TestError;
-import org.openstreetmap.josm.testutils.JOSMTestRules;
-
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import org.openstreetmap.josm.testutils.annotations.TaggingPresets;
 
 /**
  * JUnit Test of {@link TagChecker}.
  */
+@TaggingPresets
 class TagCheckerTest {
-
-    /**
-     * Setup test.
-     */
-    @RegisterExtension
-    @SuppressFBWarnings(value = "URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
-    public JOSMTestRules rule = new JOSMTestRules().presets();
-
     List<TestError> test(OsmPrimitive primitive) throws IOException {
         final TagChecker checker = new TagChecker() {
             @Override
@@ -265,7 +255,7 @@ class TagCheckerTest {
     }
 
     private static void doTestUnwantedNonprintingControlCharacters(String s) {
-        doTestUnwantedNonprintingControlCharacters(s, Assert::assertTrue, "");
+        doTestUnwantedNonprintingControlCharacters(s, Assertions::assertTrue, "");
     }
 
     /**
@@ -275,13 +265,13 @@ class TagCheckerTest {
     @Test
     void testContainsRemoveUnwantedNonprintingControlCharacters() {
         // Check empty string is handled
-        doTestUnwantedNonprintingControlCharacters("", Assert::assertFalse, "");
+        doTestUnwantedNonprintingControlCharacters("", Assertions::assertFalse, "");
         // Check 65 ASCII control characters are removed, except new lines
         for (char c = 0x0; c < 0x20; c++) {
             if (c != '\r' && c != '\n') {
                 doTestUnwantedNonprintingControlCharacters(Character.toString(c));
             } else {
-                doTestUnwantedNonprintingControlCharacters(Character.toString(c), Assert::assertFalse, Character.toString(c));
+                doTestUnwantedNonprintingControlCharacters(Character.toString(c), Assertions::assertFalse, Character.toString(c));
             }
         }
         doTestUnwantedNonprintingControlCharacters(Character.toString((char) 0x7F));
@@ -297,12 +287,12 @@ class TagCheckerTest {
             final String s = Character.toString(c);
             doTestUnwantedNonprintingControlCharacters(s);
             doTestUnwantedNonprintingControlCharacters(s + s);
-            doTestUnwantedNonprintingControlCharacters(s + 'a' + s, Assert::assertTrue, "a");
+            doTestUnwantedNonprintingControlCharacters(s + 'a' + s, Assertions::assertTrue, "a");
             final String ok = 'a' + s + 'b';
-            doTestUnwantedNonprintingControlCharacters(ok, Assert::assertFalse, ok);
-            doTestUnwantedNonprintingControlCharacters(s + ok, Assert::assertTrue, ok);
-            doTestUnwantedNonprintingControlCharacters(ok + s, Assert::assertTrue, ok);
-            doTestUnwantedNonprintingControlCharacters(s + ok + s, Assert::assertTrue, ok);
+            doTestUnwantedNonprintingControlCharacters(ok, Assertions::assertFalse, ok);
+            doTestUnwantedNonprintingControlCharacters(s + ok, Assertions::assertTrue, ok);
+            doTestUnwantedNonprintingControlCharacters(ok + s, Assertions::assertTrue, ok);
+            doTestUnwantedNonprintingControlCharacters(s + ok + s, Assertions::assertTrue, ok);
         }
     }
 

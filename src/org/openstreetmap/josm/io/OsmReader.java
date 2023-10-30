@@ -486,7 +486,7 @@ public class OsmReader extends AbstractReader {
     }
 
     /**
-     * Exception thrown after user cancelation.
+     * Exception thrown after user cancellation.
      */
     private static final class OsmParsingCanceledException extends XmlStreamParsingException implements ImportCancelException {
         /**
@@ -501,7 +501,7 @@ public class OsmReader extends AbstractReader {
 
     @Override
     protected DataSet doParseDataSet(InputStream source, ProgressMonitor progressMonitor) throws IllegalDataException {
-        return doParseDataSet(source, progressMonitor, ir -> {
+        return doParseDataSet(source, progressMonitor, (ParserWorker) ir -> {
             try {
                 setParser(XmlUtils.newSafeXMLInputFactory().createXMLStreamReader(ir));
                 parse();

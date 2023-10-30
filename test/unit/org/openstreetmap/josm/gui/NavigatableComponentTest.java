@@ -21,7 +21,6 @@ import org.hamcrest.CustomTypeSafeMatcher;
 import org.hamcrest.Matcher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 import org.openstreetmap.josm.data.Bounds;
 import org.openstreetmap.josm.data.ProjectionBounds;
 import org.openstreetmap.josm.data.coor.EastNorth;
@@ -31,15 +30,16 @@ import org.openstreetmap.josm.data.osm.Node;
 import org.openstreetmap.josm.data.projection.ProjectionRegistry;
 import org.openstreetmap.josm.gui.layer.OsmDataLayer;
 import org.openstreetmap.josm.gui.util.GuiHelper;
-import org.openstreetmap.josm.testutils.JOSMTestRules;
-
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import org.openstreetmap.josm.testutils.annotations.BasicPreferences;
+import org.openstreetmap.josm.testutils.annotations.Projection;
 
 /**
  * Some tests for the {@link NavigatableComponent} class.
  * @author Michael Zangl
  *
  */
+@BasicPreferences
+@Projection // We need the projection for coordinate conversions.
 class NavigatableComponentTest {
 
     private static final class NavigatableComponentMock extends NavigatableComponent {
@@ -62,13 +62,6 @@ class NavigatableComponentTest {
     private static final int HEIGHT = 200;
     private static final int WIDTH = 300;
     private NavigatableComponentMock component;
-
-    /**
-     * We need the projection for coordinate conversions.
-     */
-    @RegisterExtension
-    @SuppressFBWarnings(value = "URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
-    public JOSMTestRules test = new JOSMTestRules().preferences().projection();
 
     /**
      * Create a new, fresh {@link NavigatableComponent}
@@ -100,11 +93,11 @@ class NavigatableComponentTest {
     void testPoint2DEastNorth() {
         assertThat(component.getPoint2D((EastNorth) null), CustomMatchers.is(new Point2D.Double()));
         Point2D shouldBeCenter = component.getPoint2D(component.getCenter());
-        assertThat(shouldBeCenter, CustomMatchers.is(new Point2D.Double(WIDTH / 2, HEIGHT / 2)));
+        assertThat(shouldBeCenter, CustomMatchers.is(new Point2D.Double(WIDTH / 2.0, HEIGHT / 2.0)));
 
         EastNorth testPoint = component.getCenter().add(300 * component.getScale(), 200 * component.getScale());
         Point2D testPointConverted = component.getPoint2D(testPoint);
-        assertThat(testPointConverted, CustomMatchers.is(new Point2D.Double(WIDTH / 2 + 300, HEIGHT / 2 - 200)));
+        assertThat(testPointConverted, CustomMatchers.is(new Point2D.Double(WIDTH / 2.0 + 300, HEIGHT / 2.0 - 200)));
     }
 
     /**
@@ -264,7 +257,7 @@ class NavigatableComponentTest {
 
     /**
      * Check that EastNorth is the same as expected after zooming the NavigatableComponent.
-     *
+     * <p>
      * Adds tolerance of 0.5 pixel for pixel grid alignment, see
      * {@link NavigatableComponent#zoomTo(EastNorth, double, boolean)}
      * @param expected expected

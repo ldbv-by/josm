@@ -3,7 +3,9 @@ package org.openstreetmap.josm.gui.mappaint.mapcss;
 
 import java.awt.Color;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
@@ -20,7 +22,9 @@ import org.openstreetmap.josm.data.gpx.GpxDistance;
 import org.openstreetmap.josm.data.osm.IPrimitive;
 import org.openstreetmap.josm.data.osm.Node;
 import org.openstreetmap.josm.data.osm.OsmPrimitive;
+import org.openstreetmap.josm.data.osm.PrimitiveId;
 import org.openstreetmap.josm.data.osm.Relation;
+import org.openstreetmap.josm.data.osm.SimplePrimitiveId;
 import org.openstreetmap.josm.data.osm.Way;
 import org.openstreetmap.josm.data.osm.search.SearchCompiler;
 import org.openstreetmap.josm.data.osm.search.SearchCompiler.Match;
@@ -38,14 +42,14 @@ import org.openstreetmap.josm.tools.Geometry;
 import org.openstreetmap.josm.tools.Logging;
 import org.openstreetmap.josm.tools.RightAndLefthandTraffic;
 import org.openstreetmap.josm.tools.RotationAngle;
+import org.openstreetmap.josm.tools.RotationAngle.WayDirectionRotationAngle;
 import org.openstreetmap.josm.tools.StreamUtils;
 import org.openstreetmap.josm.tools.Territories;
 import org.openstreetmap.josm.tools.Utils;
-import org.openstreetmap.josm.tools.RotationAngle.WayDirectionRotationAngle;
 
 /**
  * List of functions that can be used in MapCSS expressions.
- *
+ * <p>
  * First parameter can be of type {@link Environment} (if needed). This is
  * automatically filled in by JOSM and the user only sees the remaining arguments.
  * When one of the user supplied arguments cannot be converted the
@@ -406,6 +410,9 @@ public final class Functions {
      * @since 15315
      */
     public static List<String> tag_regex(final Environment env, String keyRegex, String flags) {
+        if (env.osm == null) {
+            return Collections.emptyList();
+        }
         int f = parse_regex_flags(flags);
         Pattern compiled = Pattern.compile(keyRegex, f);
         return env.osm.getKeys().entrySet().stream()
@@ -457,7 +464,7 @@ public final class Functions {
 
     /**
      * Gets a list of all non-null values of the key {@code key} from the object's parent(s).
-     *
+     * <p>
      * The values are sorted according to {@link AlphanumComparator}.
      * @param env the environment
      * @param key the OSM key
@@ -519,6 +526,86 @@ public final class Functions {
     }
 
     /**
+     * Gets a list of all OSM id's of the object's parent(s) with a specified key.
+     *
+     * @param env      the environment
+     * @param key      the OSM key
+     * @param keyValue the regex value of the OSM key
+     * @return a list of non-null values of the OSM id's from the object's parent(s)
+     * @since 18829
+     */
+    @NullableArguments
+    public static List<IPrimitive> parent_osm_primitives(final Environment env, String key, String keyValue) {
+         if (env.parent == null) {
+             if (env.osm != null) {
+                final ArrayList<IPrimitive> parents = new ArrayList<>();
+                for (IPrimitive parent : env.osm.getReferrers()) {
+                    if ((key == null || parent.get(key) != null)
+                            && (keyValue == null || regexp_test(keyValue, parent.get(key)))) {
+                        parents.add(parent);
+                    }
+                }
+                return Collections.unmodifiableList(parents);
+            }
+            return Collections.emptyList();
+         }
+         return Collections.singletonList(env.parent);
+     }
+
+     /**
+      * Gets a list of all OSM id's of the object's parent(s) with a specified key.
+      *
+      * @param env the environment
+      * @param key the OSM key
+      * @return a list of non-null values of the OSM id's from the object's parent(s)
+      * @since 18829
+      */
+     @NullableArguments
+     public static List<IPrimitive> parent_osm_primitives(final Environment env, String key) {
+         return parent_osm_primitives(env, key, null);
+     }
+
+    /**
+     * Gets a list of all OSM id's of the object's parent(s).
+     *
+     * @param env the environment
+     * @return a list of non-null values of the OSM id's from the object's parent(s)
+     * @since 18829
+     */
+    public static List<IPrimitive> parent_osm_primitives(final Environment env) {
+        return parent_osm_primitives(env, null, null);
+    }
+
+    /**
+     * Convert Primitives to a string
+     *
+     * @param primitives The primitives to convert
+     * @return A list of strings in the format type + id (in the list order)
+     * @see SimplePrimitiveId#toSimpleId
+     * @since 18829
+     */
+    public static List<String> convert_primitives_to_string(Iterable<PrimitiveId> primitives) {
+        final List<String> primitiveStrings = new ArrayList<>(primitives instanceof Collection ?
+                ((Collection<?>) primitives).size() : 0);
+        for (PrimitiveId primitive : primitives) {
+            primitiveStrings.add(convert_primitive_to_string(primitive));
+        }
+        return primitiveStrings;
+    }
+
+    /**
+     * Convert a primitive to a string
+     *
+     * @param primitive The primitive to convert
+     * @return A string in the format type + id
+     * @see SimplePrimitiveId#toSimpleId
+     * @since 18829
+     */
+    public static String convert_primitive_to_string(PrimitiveId primitive) {
+        return SimplePrimitiveId.toSimpleId(primitive);
+    }
+
+    /**
      * Returns the lowest distance between the OSM object and a GPX point
      * <p>
      * @param env the environment
@@ -541,7 +628,7 @@ public final class Functions {
      * @return {@code true} if the object has a tag with the given key, {@code false} otherwise
      */
     public static boolean has_tag_key(final Environment env, String key) {
-        return env.osm.hasKey(key);
+        return env.osm != null && env.osm.hasKey(key);
     }
 
     /**
@@ -553,7 +640,7 @@ public final class Functions {
         if (env.index == null) {
             return null;
         }
-        return Float.valueOf(env.index + 1f);
+        return env.index + 1f;
     }
 
     /**
@@ -725,8 +812,8 @@ public final class Functions {
     public static Double cardinal_to_radians(String cardinal) {
         try {
             return RotationAngle.parseCardinalRotation(cardinal);
-        } catch (IllegalArgumentException ignore) {
-            Logging.trace(ignore);
+        } catch (IllegalArgumentException illegalArgumentException) {
+            Logging.trace(illegalArgumentException);
             return null;
         }
     }
@@ -764,6 +851,9 @@ public final class Functions {
      * @see SearchCompiler
      */
     public static Boolean JOSM_search(final Environment env, String searchStr) {
+        if (env.osm == null) {
+            return null;
+        }
         Match m;
         try {
             m = SearchCompiler.compile(searchStr);
@@ -777,7 +867,7 @@ public final class Functions {
     /**
      * Obtains the JOSM key {@link org.openstreetmap.josm.data.Preferences} string for key {@code key},
      * and defaults to {@code def} if that is null.
-     *
+     * <p>
      * If the default value can be {@linkplain Cascade#convertTo converted} to a {@link Color},
      * the {@link NamedColorProperty} is retrieved as string.
      *
@@ -856,7 +946,7 @@ public final class Functions {
      * @see IPrimitive#getUniqueId()
      */
     public static long osm_id(final Environment env) {
-        return env.osm.getUniqueId();
+        return env.osm != null ? env.osm.getUniqueId() : 0;
     }
 
     /**
@@ -867,7 +957,7 @@ public final class Functions {
      * @since 15246
      */
     public static String osm_user_name(final Environment env) {
-        return env.osm.getUser().getName();
+        return env.osm != null ? env.osm.getUser().getName() : null;
     }
 
     /**
@@ -878,7 +968,7 @@ public final class Functions {
      * @since 15246
      */
     public static long osm_user_id(final Environment env) {
-        return env.osm.getUser().getId();
+        return env.osm != null ? env.osm.getUser().getId() : 0;
     }
 
     /**
@@ -889,7 +979,7 @@ public final class Functions {
      * @since 15246
      */
     public static int osm_version(final Environment env) {
-        return env.osm.getVersion();
+        return env.osm != null ? env.osm.getVersion() : 0;
     }
 
     /**
@@ -900,7 +990,7 @@ public final class Functions {
      * @since 15246
      */
     public static int osm_changeset_id(final Environment env) {
-        return env.osm.getChangesetId();
+        return env.osm != null ? env.osm.getChangesetId() : 0;
     }
 
     /**
@@ -911,7 +1001,7 @@ public final class Functions {
      * @since 15246
      */
     public static int osm_timestamp(final Environment env) {
-        return env.osm.getRawTimestamp();
+        return env.osm != null ? env.osm.getRawTimestamp() : 0;
     }
 
     /**
@@ -988,7 +1078,7 @@ public final class Functions {
 
     /**
      * Returns a title-cased version of the string where words start with an uppercase character and the remaining characters are lowercase
-     *
+     * <p>
      * Also known as "capitalize".
      * @param str The source string
      * @return The resulting string
@@ -1052,7 +1142,9 @@ public final class Functions {
     }
 
     /**
-     * Percent-decode a string. (See https://en.wikipedia.org/wiki/Percent-encoding)
+     * Percent-decode a string. (See
+     * <a href="https://en.wikipedia.org/wiki/Percent-encoding">https://en.wikipedia.org/wiki/Percent-encoding</a>)
+     * <p>
      * This is especially useful for wikipedia titles
      * @param s url-encoded string
      * @return the decoded string, or original in case of an error
@@ -1069,7 +1161,9 @@ public final class Functions {
     }
 
     /**
-     * Percent-encode a string. (See https://en.wikipedia.org/wiki/Percent-encoding)
+     * Percent-encode a string.
+     * (See <a href="https://en.wikipedia.org/wiki/Percent-encoding">https://en.wikipedia.org/wiki/Percent-encoding</a>)
+     * <p>
      * This is especially useful for data urls, e.g.
      * <code>concat("data:image/svg+xml,", URL_encode("&lt;svg&gt;...&lt;/svg&gt;"));</code>
      * @param s arbitrary string
@@ -1081,7 +1175,7 @@ public final class Functions {
 
     /**
      * XML-encode a string.
-     *
+     * <p>
      * Escapes special characters in xml. Alternative to using &lt;![CDATA[ ... ]]&gt; blocks.
      * @param s arbitrary string
      * @return the encoded string
@@ -1108,7 +1202,11 @@ public final class Functions {
      * @since 7193
      */
     public static boolean is_right_hand_traffic(Environment env) {
-        return RightAndLefthandTraffic.isRightHandTraffic(center(env));
+        final LatLon center = center(env);
+        if (center != null) {
+            return RightAndLefthandTraffic.isRightHandTraffic(center);
+        }
+        return false;
     }
 
     /**
@@ -1172,7 +1270,7 @@ public final class Functions {
      * @return number of tags
      */
     public static int number_of_tags(Environment env) {
-        return env.osm.getNumKeys();
+        return env.osm != null ? env.osm.getNumKeys() : 0;
     }
 
     /**
@@ -1182,7 +1280,7 @@ public final class Functions {
      * @return the value of the setting (calculated when the style is loaded)
      */
     public static Object setting(Environment env, String key) {
-        return env.source.settingValues.get(key);
+        return env.source != null ? env.source.settingValues.get(key) : null;
     }
 
     /**
@@ -1192,7 +1290,12 @@ public final class Functions {
      * @since 11247
      */
     public static LatLon center(Environment env) {
-        return env.osm instanceof Node ? ((Node) env.osm).getCoor() : env.osm.getBBox().getCenter();
+        if (env.osm instanceof ILatLon) {
+            return new LatLon(((ILatLon) env.osm).lat(), ((ILatLon) env.osm).lon());
+        } else if (env.osm != null) {
+            return env.osm.getBBox().getCenter();
+        }
+        return null;
     }
 
     /**
@@ -1227,7 +1330,11 @@ public final class Functions {
      * @since 12514
      */
     public static boolean at(Environment env, double lat, double lon) {
-        return new LatLon(lat, lon).equalsEpsilon(center(env), ILatLon.MAX_SERVER_PRECISION);
+        final ILatLon center = center(env);
+        if (center != null) {
+            return new LatLon(lat, lon).equalsEpsilon(center, ILatLon.MAX_SERVER_PRECISION);
+        }
+        return false;
     }
 
     /**

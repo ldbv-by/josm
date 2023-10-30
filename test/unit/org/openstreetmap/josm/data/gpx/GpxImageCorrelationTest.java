@@ -17,34 +17,23 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.junit.jupiter.api.TestMethodOrder;
-import org.junit.jupiter.api.extension.RegisterExtension;
 import org.openstreetmap.josm.TestUtils;
 import org.openstreetmap.josm.data.coor.CachedLatLon;
 import org.openstreetmap.josm.data.coor.LatLon;
 import org.openstreetmap.josm.io.GpxReaderTest;
 import org.openstreetmap.josm.spi.preferences.Config;
 import org.openstreetmap.josm.spi.preferences.IPreferences;
-import org.openstreetmap.josm.testutils.JOSMTestRules;
+import org.openstreetmap.josm.testutils.annotations.Timezone;
 import org.openstreetmap.josm.tools.date.DateUtils;
-import org.openstreetmap.josm.tools.date.DateUtilsTest;
 import org.xml.sax.SAXException;
-
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /**
  * Unit tests of {@link GpxImageCorrelation} class.
  */
-@TestMethodOrder(MethodName.class)
 @TestInstance(Lifecycle.PER_CLASS)
+@TestMethodOrder(MethodName.class)
+@Timezone
 class GpxImageCorrelationTest {
-
-    /**
-     * Setup test.
-     */
-    @RegisterExtension
-    @SuppressFBWarnings(value = "URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
-    public JOSMTestRules test = new JOSMTestRules();
-
     GpxData gpx;
     GpxImageEntry ib, i0, i1, i2, i3, i4, i5, i6, i7;
     List<GpxImageEntry> images;
@@ -58,7 +47,6 @@ class GpxImageCorrelationTest {
     @BeforeAll
     public void setUp() throws IOException, SAXException {
         s = Config.getPref();
-        DateUtilsTest.setTimeZone(DateUtils.UTC);
 
         gpx = GpxReaderTest.parseGpxData(TestUtils.getTestDataRoot() + "tracks/tracks.gpx");
         assertEquals(5, gpx.tracks.size());
@@ -108,14 +96,14 @@ class GpxImageCorrelationTest {
 
     /**
      * Tests matching of images to a GPX track.
-     *
+     * <p>
      * TEST #1: default settings
      * tag images within 2 minutes to tracks/segments, interpolate between segments only
      */
     @Test
     void testMatchGpxTrack1() {
         assertEquals(7, GpxImageCorrelation.matchGpxTrack(images, gpx, new GpxImageCorrelationSettings(0, false)));
-        assertEquals(null, ib.getPos());
+        assertNull(ib.getPos());
         assertEquals(new CachedLatLon(47.19286847859621, 8.79732714034617), i0.getPos()); // start of track
         assertEquals(new CachedLatLon(47.196979885920882, 8.79541271366179), i1.getPos()); // exact match
         assertEquals(new CachedLatLon(47.197319911792874, 8.792139580473304), i3.getPos()); // exact match
@@ -132,22 +120,22 @@ class GpxImageCorrelationTest {
                 && i4.hasNewGpsData() && i5.hasNewGpsData() && i6.hasNewGpsData());
         // First waypoint has no speed in matchGpxTrack(). Speed is calculated
         // and not taken from GPX track.
-        assertEquals(null, ib.getSpeed());
-        assertEquals(null, i0.getSpeed());
-        assertEquals(Double.valueOf(11.675317966018756), i1.getSpeed(), 0.000001);
-        assertEquals(Double.valueOf(24.992418392716967), i2.getSpeed(), 0.000001);
-        assertEquals(Double.valueOf(27.307968754679223), i3.getSpeed(), 0.000001);
-        assertEquals(null, ib.getElevation());
-        assertEquals(null, i0.getElevation());
-        assertEquals(Double.valueOf(489.29), i1.getElevation(), 0.000001);
-        assertEquals(Double.valueOf((490.40 + 489.75) / 2), i2.getElevation(), 0.000001);
-        assertEquals(Double.valueOf(486.368333333), i3.getElevation(), 0.000001);
+        assertNull(ib.getSpeed());
+        assertNull(i0.getSpeed());
+        assertEquals(11.675317966018756, i1.getSpeed(), 0.000001);
+        assertEquals(24.992418392716967, i2.getSpeed(), 0.000001);
+        assertEquals(27.307968754679223, i3.getSpeed(), 0.000001);
+        assertNull(ib.getElevation());
+        assertNull(i0.getElevation());
+        assertEquals(489.29, i1.getElevation(), 0.000001);
+        assertEquals((490.40 + 489.75) / 2, i2.getElevation(), 0.000001);
+        assertEquals(486.368333333, i3.getElevation(), 0.000001);
         // interpolated elevation between trackpoints with interpolated timestamps
-        assertEquals(Double.valueOf(475.393978719), i4.getElevation(), 0.000001);
-        assertEquals(null, i5.getElevation());
-        assertEquals(null, i6.getElevation());
+        assertEquals(475.393978719, i4.getElevation(), 0.000001);
+        assertNull(i5.getElevation());
+        assertNull(i6.getElevation());
 
-        assertEquals(null, ib.getGpsInstant());
+        assertNull(ib.getGpsInstant());
         assertEquals(DateUtils.parseInstant("2016:01:03 11:59:54"), i0.getGpsInstant()); // original time is kept
         assertEquals(DateUtils.parseInstant("2016:01:03 12:04:01"), i1.getGpsInstant());
         assertEquals(DateUtils.parseInstant("2016:01:03 12:04:57"), i2.getGpsInstant());
@@ -156,7 +144,7 @@ class GpxImageCorrelationTest {
 
     /**
      * Tests matching of images to a GPX track.
-     *
+     * <p>
      * TEST #2: Disable all interpolation and tagging close to tracks. Only i1-i4 are tagged
      */
     @Test
@@ -167,20 +155,20 @@ class GpxImageCorrelationTest {
         s.putBoolean("geoimage.seg.int", false);
 
         assertEquals(4, GpxImageCorrelation.matchGpxTrack(images, gpx, new GpxImageCorrelationSettings(0, false)));
-        assertEquals(null, ib.getPos());
-        assertEquals(null, i0.getPos());
+        assertNull(ib.getPos());
+        assertNull(i0.getPos());
         assertEquals(new CachedLatLon(47.196979885920882, 8.79541271366179), i1.getPos());
         assertEquals(new CachedLatLon((47.197131179273129 + 47.197186248376966) / 2,
                 (8.792974585667253 + 8.792809881269932) / 2), i2.getPos());
         assertEquals(new CachedLatLon(47.197319911792874, 8.792139580473304), i3.getPos());
         assertEquals(new CachedLatLon(47.197568312311816, 8.790292849679897), i4.getPos());
-        assertEquals(null, i5.getPos());
-        assertEquals(null, i6.getPos());
+        assertNull(i5.getPos());
+        assertNull(i6.getPos());
     }
 
     /**
      * Tests matching of images to a GPX track.
-     *
+     * <p>
      * TEST #3: Disable all interpolation and allow tagging within 1 minute of a track. i0-i5 are tagged.
      * i6 will not be tagged, because it's 68 seconds away from the next waypoint in either direction
      * i7 will keep the old position
@@ -195,7 +183,7 @@ class GpxImageCorrelationTest {
         s.putBoolean("geoimage.seg.int", false);
 
         assertEquals(6, GpxImageCorrelation.matchGpxTrack(images, gpx, new GpxImageCorrelationSettings(0, false)));
-        assertEquals(null, ib.getPos());
+        assertNull(ib.getPos());
         assertEquals(new CachedLatLon(47.19286847859621, 8.79732714034617), i0.getPos());
         assertEquals(new CachedLatLon(47.196979885920882, 8.79541271366179), i1.getPos());
         assertEquals(new CachedLatLon((47.197131179273129 + 47.197186248376966) / 2,
@@ -203,13 +191,13 @@ class GpxImageCorrelationTest {
         assertEquals(new CachedLatLon(47.197319911792874, 8.792139580473304), i3.getPos());
         assertEquals(new CachedLatLon(47.197568312311816, 8.790292849679897), i4.getPos());
         assertEquals(new CachedLatLon(47.19819249585271, 8.78536943346262), i5.getPos());
-        assertEquals(null, i6.getPos());
+        assertNull(i6.getPos());
         assertEquals(new CachedLatLon(1, 2), i7.getPos());
     }
 
     /**
      * Tests matching of images to a GPX track.
-     *
+     * <p>
      * TEST #4: Force tagging (parameter forceTags=true, no change of configuration). All images will be tagged
      * i5-i6 will now be interpolated, therefore it will have an elevation and different coordinates than in tests above
      * i7 will be at the end of the track
@@ -227,15 +215,15 @@ class GpxImageCorrelationTest {
         assertEquals(new CachedLatLon(47.198845306804905, 8.783144918860685), i5.getPos()); // interpolated between tracks
         assertEquals(new CachedLatLon(47.19985828931693, 8.77969308585768), i6.getPos()); // different values than in tests #1 and #3!
 
-        assertEquals(Double.valueOf(447.894014085), i5.getElevation(), 0.000001);
-        assertEquals(Double.valueOf(437.395070423), i6.getElevation(), 0.000001);
+        assertEquals(447.894014085, i5.getElevation(), 0.000001);
+        assertEquals(437.395070423, i6.getElevation(), 0.000001);
 
         assertEquals(new CachedLatLon(47.20126815140247, 8.77192972227931), i7.getPos());
     }
 
     /**
      * Tests matching of images to a GPX track.
-     *
+     * <p>
      * TEST #5: Force tagging (parameter forceTags=false, but configuration changed).
      * Results same as #4
      */
@@ -264,15 +252,15 @@ class GpxImageCorrelationTest {
         assertEquals(new CachedLatLon(47.198845306804905, 8.783144918860685), i5.getPos());
         assertEquals(new CachedLatLon(47.19985828931693, 8.77969308585768), i6.getPos());
 
-        assertEquals(Double.valueOf(447.894014085), i5.getElevation(), 0.000001);
-        assertEquals(Double.valueOf(437.395070423), i6.getElevation(), 0.000001);
+        assertEquals(447.894014085, i5.getElevation(), 0.000001);
+        assertEquals(437.395070423, i6.getElevation(), 0.000001);
 
         assertEquals(new CachedLatLon(47.20126815140247, 8.77192972227931), i7.getPos());
     }
 
     /**
      * Tests matching of images to a GPX track.
-     *
+     * <p>
      * TEST #6: Disable tagging but allow interpolation when tracks are less than 500m apart. i0-i4 are tagged.
      * i5-i6 will not be tagged, because the tracks are 897m apart.
      * not checking all the coordinates again, did that 5 times already, just the number of matched images
@@ -292,7 +280,7 @@ class GpxImageCorrelationTest {
 
     /**
      * Tests matching of images to a GPX track.
-     *
+     * <p>
      * TEST #7: Disable tagging but allow interpolation when tracks are less than 1000m apart. i0-i6 are tagged.
      * i5-i6 will be tagged, because the tracks are 897m apart.
      */
@@ -311,7 +299,7 @@ class GpxImageCorrelationTest {
 
     /**
      * Tests matching of images to a GPX track.
-     *
+     * <p>
      * TEST #8: Disable tagging but allow interpolation when tracks are less than 2 min apart. i0-i4 are tagged.
      * i5-i6 will not be tagged, because the tracks are 2.5min apart.
      */
@@ -330,7 +318,7 @@ class GpxImageCorrelationTest {
 
     /**
      * Tests matching of images to a GPX track.
-     *
+     * <p>
      * TEST #9: Disable tagging but allow interpolation when tracks are less than 3 min apart. i0-i6 are tagged.
      * i5-i6 will be tagged, because the tracks are 2.5min apart.
      */

@@ -6,9 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
 
-import org.junit.Assert;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 import org.openstreetmap.josm.TestUtils;
 import org.openstreetmap.josm.data.coor.EastNorth;
 import org.openstreetmap.josm.data.coor.LatLon;
@@ -17,21 +15,13 @@ import org.openstreetmap.josm.data.osm.Node;
 import org.openstreetmap.josm.data.osm.Relation;
 import org.openstreetmap.josm.data.osm.RelationMember;
 import org.openstreetmap.josm.data.osm.Way;
-import org.openstreetmap.josm.testutils.JOSMTestRules;
-
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import org.openstreetmap.josm.testutils.annotations.Projection;
 
 /**
  * Unit tests for class {@link SplitWayAction}.
  */
+@Projection
 final class SplitWayActionTest {
-
-    /**
-     * Setup test.
-     */
-    @RegisterExtension
-    @SuppressFBWarnings(value = "URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
-    public JOSMTestRules test = new JOSMTestRules().projection();
     private final DataSet dataSet = new DataSet();
 
     private Node addNode(int east, int north) {
@@ -58,7 +48,7 @@ final class SplitWayActionTest {
         Node[] w1NodesArray = new Node[] {n6, n1, n7};
         w1.setNodes(Arrays.asList(w1NodesArray));
         Way w2 = new Way();
-        w2.setNodes(Arrays.asList(new Node[] {n1, n2, n3, n1, n4, n5, n1}));
+        w2.setNodes(Arrays.asList(n1, n2, n3, n1, n4, n5, n1));
         dataSet.addPrimitive(w1);
         dataSet.addPrimitive(w2);
 
@@ -108,7 +98,7 @@ final class SplitWayActionTest {
         SplitWayAction.runOn(dataSet);
         for (RelationMember member : restriction.getMembers()) {
             if ("from".equals(member.getRole())) {
-                Assert.assertTrue(member.getWay().containsNode(via));
+                assertTrue(member.getWay().containsNode(via));
             }
         }
     }

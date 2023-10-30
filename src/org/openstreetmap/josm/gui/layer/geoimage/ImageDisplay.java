@@ -119,6 +119,7 @@ public class ImageDisplay extends JComponent implements Destroyable, PreferenceC
     private class UpdateImageThread extends Thread {
         private boolean restart;
 
+        @SuppressWarnings("DoNotCall") // we are calling `run` from the thread we want it to be running on (aka recursive)
         @Override
         public void run() {
             updateProcessedImage();
@@ -364,10 +365,10 @@ public class ImageDisplay extends JComponent implements Destroyable, PreferenceC
             if (rotation > 0) {
                 currentVisibleRect.width = (int) (currentVisibleRect.width * ZOOM_STEP.get());
                 currentVisibleRect.height = (int) (currentVisibleRect.height * ZOOM_STEP.get());
-            } else {
+            } else if (rotation < 0) {
                 currentVisibleRect.width = (int) (currentVisibleRect.width / ZOOM_STEP.get());
                 currentVisibleRect.height = (int) (currentVisibleRect.height / ZOOM_STEP.get());
-            }
+            } // else rotation == 0, which can happen with some modern trackpads (see #22770)
 
             // Check that the zoom doesn't exceed MAX_ZOOM:1
             ensureMaxZoom(currentVisibleRect);

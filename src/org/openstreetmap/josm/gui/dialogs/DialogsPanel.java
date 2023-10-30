@@ -107,6 +107,32 @@ public class DialogsPanel extends JPanel implements Destroyable {
         }
     }
 
+    /**
+     * Remove a {@link ToggleDialog} from the list of known dialogs and trigger reconstruct.
+     * @param toggleDialog The dialog to remove
+     * @since 18686
+     */
+    public void remove(ToggleDialog toggleDialog) {
+        remove(toggleDialog, true);
+    }
+
+    /**
+     * Remove a {@link ToggleDialog} from the list of known dialogs.
+     * @param toggleDialog The dialog to remove
+     * @param doReconstruct <code>true</code> if reconstruction should be triggered.
+     * @since 18686
+     */
+    public void remove(ToggleDialog toggleDialog, boolean doReconstruct) {
+        toggleDialog.setDialogsPanel(null);
+        final JPanel oldPanel = panels.get(allDialogs.indexOf(toggleDialog));
+        allDialogs.remove(toggleDialog);
+        panels.remove(oldPanel);
+        mSpltPane.remove(oldPanel);
+        if (doReconstruct && !allDialogs.isEmpty()) {
+            reconstruct(Action.ELEMENT_SHRINKS, toggleDialog);
+        }
+    }
+
     static final class MinSizePanel extends JPanel {
         @Override
         public Dimension getMinimumSize() {
@@ -148,7 +174,7 @@ public class DialogsPanel extends JPanel implements Destroyable {
 
         final int n = allDialogs.size();
 
-        /**
+        /*
          * reset the panels
          */
         for (JPanel p: panels) {
@@ -156,7 +182,7 @@ public class DialogsPanel extends JPanel implements Destroyable {
             p.setVisible(false);
         }
 
-        /**
+        /*
          * Add the elements to their respective panel.
          *
          * Each panel contains one dialog in default view and zero or more
@@ -189,7 +215,7 @@ public class DialogsPanel extends JPanel implements Destroyable {
         }
         final int numPanels = n - k;
 
-        /**
+        /*
          * Determine the panel geometry
          */
         if (action == Action.RESTORE_SAVED || action == Action.ELEMENT_SHRINKS) {
@@ -218,7 +244,7 @@ public class DialogsPanel extends JPanel implements Destroyable {
                 }
             }
 
-            /**
+            /*
              * If we add additional dialogs on startup (e.g. geoimage), they may
              * not have an actual height yet.
              * In this case we simply reset everything to it's preferred size.
@@ -228,23 +254,23 @@ public class DialogsPanel extends JPanel implements Destroyable {
                 return;
             }
 
-            /** total Height */
+            /* total Height */
             final int h = mSpltPane.getMultiSplitLayout().getModel().getBounds().getSize().height;
 
-            /** space, that is available for dialogs in default view (after the reconfiguration) */
+            /* space, that is available for dialogs in default view (after the reconfiguration) */
             final int s2 = h - (numPanels - 1) * DIVIDER_SIZE - sumC;
 
             final int hpTrig = triggeredBy.getPreferredHeight();
             if (hpTrig <= 0) throw new IllegalStateException(); // Must be positive
 
-            /** The new dialog gets a fair share */
+            /* The new dialog gets a fair share */
             final int hnTrig = hpTrig * s2 / (hpTrig + sumP);
             triggeredBy.setPreferredSize(new Dimension(Integer.MAX_VALUE, hnTrig));
 
-            /** This is remaining for the other default view dialogs */
+            /* This is remaining for the other default view dialogs */
             final int r = s2 - hnTrig;
 
-            /**
+            /*
              * Take space only from dialogs that are relatively large
              */
             int dm = 0;        // additional space needed by the small dialogs
@@ -262,7 +288,7 @@ public class DialogsPanel extends JPanel implements Destroyable {
                     }
                 }
             }
-            /** adjust, without changing the sum */
+            /* adjust, without changing the sum */
             for (final ToggleDialog dlg : allDialogs) {
                 if (dlg != triggeredBy && dlg.isDialogInDefaultView()) {
                     final int ha = dlg.getHeight();
@@ -279,7 +305,7 @@ public class DialogsPanel extends JPanel implements Destroyable {
             }
         }
 
-        /**
+        /*
          * create Layout
          */
         final List<Node> ch = new ArrayList<>();
@@ -307,7 +333,7 @@ public class DialogsPanel extends JPanel implements Destroyable {
         mSpltPane.getMultiSplitLayout().setFloatingDividers(true);
         mSpltPane.revalidate();
 
-        /**
+        /*
          * Hide the Panel, if there is nothing to show
          */
         if (numPanels == 1 && panels.get(n-1).getComponents().length == 0) {
@@ -325,7 +351,7 @@ public class DialogsPanel extends JPanel implements Destroyable {
 
     @Override
     public void destroy() {
-        for (ToggleDialog t : allDialogs) {
+        for (ToggleDialog t : new ArrayList<>(allDialogs)) {
             try {
                 t.destroy();
             } catch (JosmRuntimeException | IllegalArgumentException | IllegalStateException e) {

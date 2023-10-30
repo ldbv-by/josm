@@ -2,35 +2,23 @@
 package org.openstreetmap.josm.gui.mappaint;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.awt.Color;
 
-import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.api.Test;
 import org.openstreetmap.josm.data.osm.Node;
 import org.openstreetmap.josm.gui.mappaint.MapPaintStyles.TagKeyReference;
 import org.openstreetmap.josm.gui.mappaint.styleelement.LabelCompositionStrategy.DeriveLabelFromNameTagsCompositionStrategy;
 import org.openstreetmap.josm.gui.mappaint.styleelement.LabelCompositionStrategy.TagLookupCompositionStrategy;
 import org.openstreetmap.josm.gui.mappaint.styleelement.TextLabel;
-import org.openstreetmap.josm.testutils.JOSMTestRules;
-
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /**
  * Extended text directives tests.
  */
 class MapCSSWithExtendedTextDirectivesTest {
-
-    /**
-     * Setup rule
-     */
-    @RegisterExtension
-    @SuppressFBWarnings(value = "URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
-    public JOSMTestRules test = new JOSMTestRules();
-
     /**
      * Test {@link DeriveLabelFromNameTagsCompositionStrategy}
      */
@@ -45,7 +33,7 @@ class MapCSSWithExtendedTextDirectivesTest {
 
         TextLabel te = TextLabel.create(env, Color.WHITE, false /* no default annotate */);
         assertNotNull(te.labelCompositionStrategy);
-        assertTrue(te.labelCompositionStrategy instanceof DeriveLabelFromNameTagsCompositionStrategy);
+        assertInstanceOf(DeriveLabelFromNameTagsCompositionStrategy.class, te.labelCompositionStrategy);
     }
 
     /**
@@ -62,7 +50,7 @@ class MapCSSWithExtendedTextDirectivesTest {
 
         TextLabel te = TextLabel.create(env, Color.WHITE, false /* no default annotate */);
         assertNotNull(te.labelCompositionStrategy);
-        assertTrue(te.labelCompositionStrategy instanceof TagLookupCompositionStrategy);
+        assertInstanceOf(TagLookupCompositionStrategy.class, te.labelCompositionStrategy);
         assertEquals("my_name", ((TagLookupCompositionStrategy) te.labelCompositionStrategy).getDefaultLabelTag());
     }
 

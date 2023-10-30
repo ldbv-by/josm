@@ -29,7 +29,7 @@ public abstract class KeyedItem extends TextItem {
     /** The constant value {@code "<different>"}. */
     protected static final String DIFFERENT = "<different>";
     /** Translation of {@code "<different>"}. */
-    protected static final String DIFFERENT_I18N = tr(DIFFERENT);
+    public static final String DIFFERENT_I18N = tr("<different>");
 
     /** True if the default value should also be set on primitives that already have tags.  */
     protected static final BooleanProperty PROP_FILL_DEFAULT = new BooleanProperty("taggingpreset.fill-default-for-tagged-primitives", false);
@@ -241,7 +241,7 @@ public abstract class KeyedItem extends TextItem {
         case KEY_REQUIRED:
             return tags.containsKey(key);
         case KEY_VALUE:
-            return tags.containsKey(key) && getValues().contains(tags.get(key)) ? Boolean.TRUE : null;
+            return (tags.containsKey(key) && getValues().contains(tags.get(key))) ? Boolean.TRUE : null;
         case KEY_VALUE_REQUIRED:
             return tags.containsKey(key) && getValues().contains(tags.get(key));
         default:

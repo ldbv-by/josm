@@ -1,6 +1,8 @@
 // License: GPL. For details, see LICENSE file.
 package org.openstreetmap.josm.data.projection;
 
+import static org.junit.jupiter.api.Assertions.fail;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -33,14 +35,13 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.junit.Assert;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.api.Timeout;
 import org.openstreetmap.josm.data.Bounds;
 import org.openstreetmap.josm.data.coor.EastNorth;
 import org.openstreetmap.josm.data.coor.LatLon;
 import org.openstreetmap.josm.gui.preferences.projection.CodeProjectionChoice;
-import org.openstreetmap.josm.testutils.JOSMTestRules;
+import org.openstreetmap.josm.testutils.annotations.ProjectionNadGrids;
 import org.openstreetmap.josm.tools.Pair;
 import org.openstreetmap.josm.tools.PlatformManager;
 
@@ -55,12 +56,14 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
  * the full path of the executable). Make sure the required *.gsb grid files
  * can be accessed, i.e. copy them from <code>nodist/data/projection</code> to <code>/usr/share/proj</code> or
  * wherever cs2cs expects them to be placed.
- *
+ * <p>
  * The input parameter for the external library is <em>not</em> the projection code
  * (e.g. "EPSG:25828"), but the entire definition, (e.g. "+proj=utm +zone=28 +ellps=GRS80 +nadgrids=null").
  * This means the test does not verify our definitions, but the correctness
  * of the algorithm, given a certain definition.
  */
+@ProjectionNadGrids
+@Timeout(90)
 class ProjectionRefTest {
 
     private static final String CS2CS_EXE = "cs2cs";
@@ -84,13 +87,6 @@ class ProjectionRefTest {
 
     static boolean debug;
     static List<String> forcedCodes;
-
-    /**
-     * Setup test.
-     */
-    @RegisterExtension
-    @SuppressFBWarnings(value = "URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
-    public JOSMTestRules test = new JOSMTestRules().projectionNadGrids().timeout(90_000);
 
     /**
      * Program entry point.
@@ -132,7 +128,7 @@ class ProjectionRefTest {
                 if (line.startsWith("<")) {
                     Matcher m = projPattern.matcher(line);
                     if (!m.matches()) {
-                        Assert.fail("unable to parse line: " + line);
+                        fail("unable to parse line: " + line);
                     }
                     String code = m.group(1);
                     String def = m.group(2).trim();
@@ -382,13 +378,13 @@ class ProjectionRefTest {
         Collection<RefEntry> refs = readData();
         refs.stream().map(ref -> ref.code).forEach(allCodes::remove);
         if (!allCodes.isEmpty()) {
-            Assert.fail("no reference data for following projections: "+allCodes);
+            fail("no reference data for following projections: "+allCodes);
         }
 
         refs.parallelStream().forEach(ref -> {
             String def0 = Projections.getInit(ref.code);
             if (def0 == null) {
-                Assert.fail("unknown code: "+ref.code);
+                fail("unknown code: "+ref.code);
             }
             if (!ref.def.equals(def0)) {
                 failures.add("definitions for ".concat(ref.code).concat(" do not match\n"));
@@ -410,7 +406,7 @@ class ProjectionRefTest {
                         String errorEN = String.format("%s (%s): Projecting latlon(%s,%s):%n" +
                                 "        expected: eastnorth(%s,%s),%n" +
                                 "        but got:  eastnorth(%s,%s)!%n",
-                                proj.toString(), proj.toCode(), ll.lat(), ll.lon(), enRef.east(), enRef.north(), en.east(), en.north());
+                                proj, proj.toCode(), ll.lat(), ll.lon(), enRef.east(), enRef.north(), en.east(), en.north());
                         failures.add(errorEN);
                         failingProjs.computeIfAbsent(proj.proj.getProj4Id(), x -> new TreeSet<>()).add(ref.code);
                     }
@@ -418,7 +414,7 @@ class ProjectionRefTest {
             }
         });
         if (!failures.isEmpty()) {
-            System.err.println(failures.toString());
+            System.err.println(failures);
             throw new AssertionError("Failing:\n" +
                     failingProjs.keySet().size() + " projections: " + failingProjs.keySet() + "\n" +
                     failingProjs.values().stream().mapToInt(Set::size).sum() + " definitions: " + failingProjs);

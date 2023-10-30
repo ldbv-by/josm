@@ -2,31 +2,21 @@
 package org.openstreetmap.josm.data.osm;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Collection;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 import org.openstreetmap.josm.TestUtils;
-import org.openstreetmap.josm.testutils.JOSMTestRules;
-
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /**
  * Unit tests of the {@code OsmPrimitiveType} class.
  */
 class OsmPrimitiveTypeTest {
-
-    /**
-     * Setup test.
-     */
-    @RegisterExtension
-    @SuppressFBWarnings(value = "URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
-    public JOSMTestRules test = new JOSMTestRules();
-
     /**
      * Unit test of {@link OsmPrimitiveType} enum.
      */
@@ -50,9 +40,9 @@ class OsmPrimitiveTypeTest {
      */
     @Test
     void testGetOsmClass() {
-        assertEquals(Node.class, OsmPrimitiveType.NODE.getOsmClass());
-        assertEquals(Way.class, OsmPrimitiveType.WAY.getOsmClass());
-        assertEquals(Relation.class, OsmPrimitiveType.RELATION.getOsmClass());
+        assertSame(Node.class, OsmPrimitiveType.NODE.getOsmClass());
+        assertSame(Way.class, OsmPrimitiveType.WAY.getOsmClass());
+        assertSame(Relation.class, OsmPrimitiveType.RELATION.getOsmClass());
         assertNull(OsmPrimitiveType.CLOSEDWAY.getOsmClass());
         assertNull(OsmPrimitiveType.MULTIPOLYGON.getOsmClass());
     }
@@ -62,11 +52,11 @@ class OsmPrimitiveTypeTest {
      */
     @Test
     void testGetDataClass() {
-        assertEquals(NodeData.class, OsmPrimitiveType.NODE.getDataClass());
-        assertEquals(WayData.class, OsmPrimitiveType.WAY.getDataClass());
-        assertEquals(RelationData.class, OsmPrimitiveType.RELATION.getDataClass());
-        assertEquals(WayData.class, OsmPrimitiveType.CLOSEDWAY.getDataClass());
-        assertEquals(RelationData.class, OsmPrimitiveType.MULTIPOLYGON.getDataClass());
+        assertSame(NodeData.class, OsmPrimitiveType.NODE.getDataClass());
+        assertSame(WayData.class, OsmPrimitiveType.WAY.getDataClass());
+        assertSame(RelationData.class, OsmPrimitiveType.RELATION.getDataClass());
+        assertSame(WayData.class, OsmPrimitiveType.CLOSEDWAY.getDataClass());
+        assertSame(RelationData.class, OsmPrimitiveType.MULTIPOLYGON.getDataClass());
     }
 
     /**
@@ -139,9 +129,9 @@ class OsmPrimitiveTypeTest {
         OsmPrimitive w = OsmPrimitiveType.WAY.newInstance(2, false);
         OsmPrimitive r = OsmPrimitiveType.RELATION.newInstance(3, false);
 
-        assertTrue(n instanceof Node);
-        assertTrue(w instanceof Way);
-        assertTrue(r instanceof Relation);
+        assertInstanceOf(Node.class, n);
+        assertInstanceOf(Way.class, w);
+        assertInstanceOf(Relation.class, r);
 
         assertEquals(1, n.getId());
         assertEquals(2, w.getId());
@@ -165,9 +155,9 @@ class OsmPrimitiveTypeTest {
         OsmPrimitive w = OsmPrimitiveType.WAY.newVersionedInstance(2, 5);
         OsmPrimitive r = OsmPrimitiveType.RELATION.newVersionedInstance(3, 6);
 
-        assertTrue(n instanceof Node);
-        assertTrue(w instanceof Way);
-        assertTrue(r instanceof Relation);
+        assertInstanceOf(Node.class, n);
+        assertInstanceOf(Way.class, w);
+        assertInstanceOf(Relation.class, r);
 
         assertEquals(1, n.getId());
         assertEquals(2, w.getId());

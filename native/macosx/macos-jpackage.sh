@@ -24,9 +24,9 @@ echo "Building JOSM.app"
 
 mkdir app
 
-if [ -z "$CERT_MACOS_P12" ] || [ -z "$CERT_MACOS_PW" ] || [ -z "$APPLE_ID_PW" ]
+if [ -z "$CERT_MACOS_P12" ] || [ -z "$CERT_MACOS_PW" ] || [ -z "$APPLE_ID_PW" ] || [ -z "$APPLE_ID_TEAM" ]
 then
-    echo "CERT_MACOS_P12, CERT_MACOS_PW and APPLE_ID_PW are not set in the environment."
+    echo "CERT_MACOS_P12, CERT_MACOS_PW, APPLE_ID_PW, or APPLE_ID_TEAM are not set in the environment."
     echo "A JOSM.app will be created but not signed nor notarized."
     SIGNAPP=false
     KEYCHAINPATH=false
@@ -54,6 +54,8 @@ fi
 set -u
 
 echo "Building and signing app"
+# We specifically need the options to not be quoted -- we _want_ the word splitting.
+# shellcheck disable=SC2086
 jpackage $JPACKAGEOPTIONS -n "JOSM" --input dist --main-jar josm-custom.jar \
     --main-class org.openstreetmap.josm.gui.MainApplication \
     --icon ./native/macosx/JOSM.icns --type app-image --dest app \
@@ -92,5 +94,5 @@ if $SIGNAPP; then
     ditto -c -k --zlibCompressionLevel 9 --keepParent app/JOSM.app app/JOSM.zip
 
     echo "Uploading to Apple"
-    xcrun altool --notarize-app -f app/JOSM.zip -p "$APPLE_ID_PW" -u "$APPLE_ID" --primary-bundle-id de.openstreetmap.josm
+    xcrun notarytool submit --apple-id "$APPLE_ID" --password "$APPLE_ID_PW" --team-id "$APPLE_ID_TEAM" --wait app/JOSM.zip
 fi

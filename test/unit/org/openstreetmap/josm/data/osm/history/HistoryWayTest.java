@@ -2,36 +2,23 @@
 package org.openstreetmap.josm.data.osm.history;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.api.Test;
 import org.openstreetmap.josm.data.osm.DefaultNameFormatter;
 import org.openstreetmap.josm.data.osm.OsmPrimitiveType;
 import org.openstreetmap.josm.data.osm.User;
-import org.openstreetmap.josm.testutils.JOSMTestRules;
-import org.openstreetmap.josm.tools.Logging;
-
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /**
  * Unit tests for class {@link HistoryWay}.
  */
 class HistoryWayTest {
-
-    /**
-     * Setup test.
-     */
-    @RegisterExtension
-    @SuppressFBWarnings(value = "URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
-    public JOSMTestRules test = new JOSMTestRules();
-
     private static HistoryWay create(Instant d) {
         return new HistoryWay(
                 1,    // id
@@ -77,13 +64,7 @@ class HistoryWayTest {
         way.addNode(1);
         assertEquals(1, way.getNumNodes());
         assertEquals(1, way.getNodeId(0));
-        try {
-            way.getNodeId(1);
-            fail("expected expection of type " + IndexOutOfBoundsException.class.toString());
-        } catch (IndexOutOfBoundsException e) {
-            // OK
-            Logging.trace(e);
-        }
+        assertThrows(IndexOutOfBoundsException.class, () -> way.getNodeId(1));
 
         way.addNode(5);
         assertEquals(2, way.getNumNodes());

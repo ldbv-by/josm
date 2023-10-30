@@ -2,7 +2,7 @@
 package org.openstreetmap.josm.data.osm;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -13,14 +13,13 @@ import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.lang3.RandomStringUtils;
-import org.junit.Before;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
-import org.junit.jupiter.api.extension.RegisterExtension;
 import org.openstreetmap.josm.PerformanceTestUtils;
 import org.openstreetmap.josm.PerformanceTestUtils.PerformanceTestTimer;
 import org.openstreetmap.josm.data.osm.OsmDataGenerator.KeyValueDataGenerator;
-import org.openstreetmap.josm.testutils.JOSMTestRules;
+import org.openstreetmap.josm.testutils.annotations.Projection;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -28,7 +27,8 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
  * This test measures the performance of {@link OsmPrimitive#get(String)} and related.
  * @author Michael Zangl
  */
-@Timeout(value = 15*60, unit = TimeUnit.SECONDS)
+@Projection
+@Timeout(value = 15, unit = TimeUnit.MINUTES)
 class KeyValuePerformanceTest {
     private static final int PUT_RUNS = 10000;
     private static final int GET_RUNS = 100000;
@@ -37,13 +37,6 @@ class KeyValuePerformanceTest {
     private static final double[] TAG_NODE_RATIOS = new double[] {.05, .3, 3, 20, 200};
     private final ArrayList<String> testStrings = new ArrayList<>();
     private Random random;
-
-    /**
-     * Prepare the test.
-     */
-    @RegisterExtension
-    @SuppressFBWarnings(value = "URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
-    public JOSMTestRules test = new JOSMTestRules().projection();
 
     /**
      * See if there is a big difference between Strings that are interned and those that are not.
@@ -95,7 +88,7 @@ class KeyValuePerformanceTest {
 
         timer = PerformanceTestUtils.startTimer("str1.equals(str2) = fails (without intern)");
         for (int i = 0; i < STRING_INTERN_TESTS; i++) {
-            assertFalse(str1.equals(str2));
+            assertNotEquals(str1, str2);
         }
         timer.done();
 
@@ -115,7 +108,7 @@ class KeyValuePerformanceTest {
     /**
      * Generate an array of test strings.
      */
-    @Before
+    @BeforeEach
     public void generateTestStrings() {
         testStrings.clear();
         random = new SecureRandom();

@@ -26,7 +26,7 @@ import org.openstreetmap.josm.tools.Logging;
  * <p>
  * The active layer is the layer the user is currently working on.
  * <p>
- * The edit layer is an data layer that we currently work with.
+ * The edit layer is a data layer that we currently work with.
  * @author Michael Zangl
  * @since 10279
  */
@@ -168,13 +168,13 @@ public class MainLayerManager extends LayerManager {
     private final List<LayerAvailabilityListener> layerAvailabilityListeners = new CopyOnWriteArrayList<>();
 
     /**
-     * Adds a active/edit layer change listener
+     * Adds an active/edit layer change listener
      *
      * @param listener the listener.
      */
     public synchronized void addActiveLayerChangeListener(ActiveLayerChangeListener listener) {
-        for (int i = 0; i < activeLayerChangeListeners.size(); i++) {
-            if (activeLayerChangeListeners.get(i) == listener) {
+        for (ActiveLayerChangeListener activeLayerChangeListener : activeLayerChangeListeners) {
+            if (activeLayerChangeListener == listener) {
                 Logging.error("");
                 Logging.error("Attempted to add listener that was already in list: " + listener);
                 showStackTrace(Thread.currentThread().getStackTrace());
@@ -184,6 +184,25 @@ public class MainLayerManager extends LayerManager {
         activeLayerChangeListeners.add(listener);
     }
 
+    /**
+     * Adds multiple active/edit layer change listeners. Either all listeners are added or none are added.
+     *
+     * @param listeners the listeners.
+     * @return {@code false} if the listener list did not change
+     * @since 18691
+     */
+    public synchronized boolean addActiveLayerChangeListeners(Collection<? extends ActiveLayerChangeListener> listeners) {
+        for (ActiveLayerChangeListener activeLayerChangeListener : activeLayerChangeListeners) {
+            if (listeners.contains(activeLayerChangeListener)) {
+                Logging.error("");
+                Logging.error("Attempted to add listener that was already in list: " + listeners);
+                showStackTrace(Thread.currentThread().getStackTrace());
+                return false;
+            }
+        }
+        return activeLayerChangeListeners.addAll(listeners);
+    }
+
     private static void showStackTrace(StackTraceElement[] stackTrace) {
         for (StackTraceElement st : stackTrace) {
             Logging.error("\tat " + st);
@@ -191,7 +210,7 @@ public class MainLayerManager extends LayerManager {
     }
 
     /**
-     * Adds a active/edit layer change listener. Fire a fake active-layer-changed-event right after adding
+     * Adds an active/edit layer change listener. Fire a fake active-layer-changed-event right after adding
      * the listener. The previous layers will be null. The listener is notified in the current thread.
      * @param listener the listener.
      */

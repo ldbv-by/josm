@@ -2,6 +2,7 @@
 package org.openstreetmap.josm.io.session;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -13,10 +14,10 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
-import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.api.Test;
 import org.openstreetmap.josm.TestUtils;
 import org.openstreetmap.josm.data.coor.EastNorth;
+import org.openstreetmap.josm.data.osm.Node;
 import org.openstreetmap.josm.gui.MainApplication;
 import org.openstreetmap.josm.gui.layer.AbstractTileSourceLayer;
 import org.openstreetmap.josm.gui.layer.GpxLayer;
@@ -26,22 +27,13 @@ import org.openstreetmap.josm.gui.layer.NoteLayer;
 import org.openstreetmap.josm.gui.layer.OsmDataLayer;
 import org.openstreetmap.josm.gui.layer.markerlayer.MarkerLayer;
 import org.openstreetmap.josm.io.IllegalDataException;
-import org.openstreetmap.josm.testutils.JOSMTestRules;
-
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import org.openstreetmap.josm.testutils.annotations.Projection;
 
 /**
  * Unit tests for Session reading.
  */
+@Projection
 class SessionReaderTest {
-
-    /**
-     * Setup tests.
-     */
-    @RegisterExtension
-    @SuppressFBWarnings(value = "URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
-    public JOSMTestRules test = new JOSMTestRules().projection();
-
     private static String getSessionDataDir() {
         return TestUtils.getTestDataRoot() + "/sessions";
     }
@@ -75,8 +67,7 @@ class SessionReaderTest {
         for (String file : new String[]{"osm.jos", "osm.joz"}) {
             List<Layer> layers = testRead(file);
             assertEquals(layers.size(), 1);
-            assertTrue(layers.get(0) instanceof OsmDataLayer);
-            OsmDataLayer osm = (OsmDataLayer) layers.get(0);
+            OsmDataLayer osm = assertInstanceOf(OsmDataLayer.class, layers.get(0));
             assertEquals(osm.getName(), "OSM layer name");
         }
     }
@@ -91,8 +82,7 @@ class SessionReaderTest {
         for (String file : new String[]{"gpx.jos", "gpx.joz", "nmea.jos"}) {
             List<Layer> layers = testRead(file);
             assertEquals(layers.size(), 1);
-            assertTrue(layers.get(0) instanceof GpxLayer);
-            GpxLayer gpx = (GpxLayer) layers.get(0);
+            GpxLayer gpx = assertInstanceOf(GpxLayer.class, layers.get(0));
             assertEquals(gpx.getName(), "GPX layer name");
         }
     }
@@ -134,7 +124,7 @@ class SessionReaderTest {
     void testReadImage() throws IOException, IllegalDataException {
         final List<Layer> layers = testRead("bing.jos");
         assertEquals(layers.size(), 1);
-        assertTrue(layers.get(0) instanceof ImageryLayer);
+        assertInstanceOf(ImageryLayer.class, layers.get(0));
         final AbstractTileSourceLayer<?> image = (AbstractTileSourceLayer<?>) layers.get(0);
         assertEquals("Bing aerial imagery", image.getName());
         EastNorth displacement = image.getDisplaySettings().getDisplacement();
@@ -156,10 +146,22 @@ class SessionReaderTest {
         }
         final List<Layer> layers = testRead("notes.joz");
         assertEquals(layers.size(), 1);
-        assertTrue(layers.get(0) instanceof NoteLayer);
-        final NoteLayer layer = (NoteLayer) layers.get(0);
+        final NoteLayer layer = assertInstanceOf(NoteLayer.class, layers.get(0));
         assertEquals("Notes", layer.getName());
         assertEquals(174, layer.getNoteData().getNotes().size());
+    }
+
+    @Test
+    void testReadGeojson() throws IOException, IllegalDataException {
+        final List<Layer> layers = testRead("geojson.jos");
+        assertEquals(1, layers.size());
+        final OsmDataLayer osmDataLayer = assertInstanceOf(OsmDataLayer.class, layers.get(0));
+        assertEquals("Geojson layer name", osmDataLayer.getName());
+        assertEquals(1, osmDataLayer.getDataSet().allPrimitives().size());
+        final Node node = assertInstanceOf(Node.class, osmDataLayer.getDataSet().allPrimitives().iterator().next());
+        assertEquals(2d, node.lat(), 1e-9);
+        assertEquals(1d, node.lon(), 1e-9);
+        assertEquals("Test point", node.get("name"));
     }
 
     /**

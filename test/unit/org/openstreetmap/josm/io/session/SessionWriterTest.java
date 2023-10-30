@@ -23,7 +23,6 @@ import java.util.zip.ZipFile;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 import org.openstreetmap.josm.TestUtils;
 import org.openstreetmap.josm.data.coor.LatLon;
 import org.openstreetmap.josm.data.gpx.GpxData;
@@ -41,15 +40,16 @@ import org.openstreetmap.josm.gui.layer.NoteLayer;
 import org.openstreetmap.josm.gui.layer.OsmDataLayer;
 import org.openstreetmap.josm.gui.layer.TMSLayer;
 import org.openstreetmap.josm.gui.layer.markerlayer.MarkerLayer;
-import org.openstreetmap.josm.testutils.JOSMTestRules;
+import org.openstreetmap.josm.testutils.annotations.Main;
+import org.openstreetmap.josm.testutils.annotations.Projection;
 import org.openstreetmap.josm.tools.MultiMap;
 import org.openstreetmap.josm.tools.Utils;
-
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /**
  * Unit tests for Session writing.
  */
+@Main
+@Projection
 public class SessionWriterTest {
 
     protected static final class OsmHeadlessJosExporter extends OsmDataSessionExporter {
@@ -99,13 +99,6 @@ public class SessionWriterTest {
     /**
      * Setup tests.
      */
-    @RegisterExtension
-    @SuppressFBWarnings(value = "URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
-    public JOSMTestRules test = new JOSMTestRules().projection().main();
-
-    /**
-     * Setup tests.
-     */
     @BeforeEach
     public void setUp() {
         MainApplication.getLayerManager().addLayer(createOsmLayer());
@@ -130,7 +123,7 @@ public class SessionWriterTest {
                 ((MarkerSessionExporter) s).setMetaTime(Instant.parse("2021-10-16T18:27:12.351Z"));
             }
         }
-        SessionWriter sw = new SessionWriter(layers, -1, exporters, new MultiMap<Layer, Layer>(), zip);
+        SessionWriter sw = new SessionWriter(layers, -1, exporters, new MultiMap<>(), zip);
         File file = new File(System.getProperty("java.io.tmpdir"), getClass().getName()+(zip ? ".joz" : ".jos"));
         try {
             sw.write(file);
@@ -213,7 +206,7 @@ public class SessionWriterTest {
      * @since 18466
      */
     public static NoteLayer createNoteLayer() {
-        return new NoteLayer(Arrays.asList(new Note(LatLon.ZERO)), "layer name");
+        return new NoteLayer(Collections.singletonList(new Note(LatLon.ZERO)), "layer name");
     }
 
     /**
@@ -222,7 +215,7 @@ public class SessionWriterTest {
      */
     @Test
     void testWriteEmptyJos() throws IOException {
-        testWrite(Collections.<Layer>emptyList(), false);
+        testWrite(Collections.emptyList(), false);
     }
 
     /**
@@ -231,7 +224,7 @@ public class SessionWriterTest {
      */
     @Test
     void testWriteEmptyJoz() throws IOException {
-        testWrite(Collections.<Layer>emptyList(), true);
+        testWrite(Collections.emptyList(), true);
     }
 
     /**
@@ -240,7 +233,7 @@ public class SessionWriterTest {
      */
     @Test
     void testWriteOsmJos() throws IOException {
-        testWrite(Collections.<Layer>singletonList(createOsmLayer()), false);
+        testWrite(Collections.singletonList(createOsmLayer()), false);
     }
 
     /**
@@ -249,7 +242,7 @@ public class SessionWriterTest {
      */
     @Test
     void testWriteOsmJoz() throws IOException {
-        testWrite(Collections.<Layer>singletonList(createOsmLayer()), true);
+        testWrite(Collections.singletonList(createOsmLayer()), true);
     }
 
     /**
@@ -258,7 +251,7 @@ public class SessionWriterTest {
      */
     @Test
     void testWriteGpxJos() throws IOException {
-        testWrite(Collections.<Layer>singletonList(createGpxLayer()), false);
+        testWrite(Collections.singletonList(createGpxLayer()), false);
     }
 
     /**
@@ -267,7 +260,7 @@ public class SessionWriterTest {
      */
     @Test
     void testWriteGpxJoz() throws IOException {
-        testWrite(Collections.<Layer>singletonList(createGpxLayer()), true);
+        testWrite(Collections.singletonList(createGpxLayer()), true);
     }
 
     /**
