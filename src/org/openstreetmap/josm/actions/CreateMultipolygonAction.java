@@ -1,43 +1,10 @@
 // License: GPL. For details, see LICENSE file.
 package org.openstreetmap.josm.actions;
 
-import static org.openstreetmap.josm.tools.I18n.tr;
-import static org.openstreetmap.josm.tools.I18n.trn;
-
-import java.awt.event.ActionEvent;
-import java.awt.event.KeyEvent;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.stream.Collectors;
-
-import javax.swing.JOptionPane;
-import javax.swing.SwingUtilities;
-
 import org.openstreetmap.josm.actions.relation.DownloadSelectedIncompleteMembersAction;
-import org.openstreetmap.josm.command.AddCommand;
-import org.openstreetmap.josm.command.ChangeCommand;
-import org.openstreetmap.josm.command.ChangeMembersCommand;
-import org.openstreetmap.josm.command.ChangePropertyCommand;
-import org.openstreetmap.josm.command.Command;
-import org.openstreetmap.josm.command.SequenceCommand;
+import org.openstreetmap.josm.command.*;
 import org.openstreetmap.josm.data.UndoRedoHandler;
-import org.openstreetmap.josm.data.osm.DataSet;
-import org.openstreetmap.josm.data.osm.IPrimitive;
-import org.openstreetmap.josm.data.osm.OsmPrimitive;
-import org.openstreetmap.josm.data.osm.OsmUtils;
-import org.openstreetmap.josm.data.osm.Relation;
-import org.openstreetmap.josm.data.osm.RelationMember;
-import org.openstreetmap.josm.data.osm.Way;
+import org.openstreetmap.josm.data.osm.*;
 import org.openstreetmap.josm.data.validation.TestError;
 import org.openstreetmap.josm.data.validation.tests.MultipolygonTest;
 import org.openstreetmap.josm.gui.MainApplication;
@@ -53,6 +20,16 @@ import org.openstreetmap.josm.tools.Pair;
 import org.openstreetmap.josm.tools.Shortcut;
 import org.openstreetmap.josm.tools.SubclassFilteredCollection;
 import org.openstreetmap.josm.tools.Utils;
+
+import javax.swing.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.stream.Collectors;
+
+import static org.openstreetmap.josm.tools.I18n.tr;
+import static org.openstreetmap.josm.tools.I18n.trn;
 
 /**
  * Create multipolygon from selected ways automatically.
@@ -460,11 +437,16 @@ public class CreateMultipolygonAction extends JosmAction {
 
         List<Command> commands = new ArrayList<>();
         boolean moveTags = Config.getPref().getBoolean("multipoly.movetags", true);
+        boolean removeDuplicateInnerTags = Config.getPref().getBoolean("multipoly.removeduplicateinnertags", true);
 
         for (Entry<String, String> entry : values.entrySet()) {
             String key = entry.getKey();
             String value = entry.getValue();
-            List<OsmPrimitive> affectedWays = innerWays.stream().filter(way -> value.equals(way.get(key))).collect(Collectors.toList());
+            List<OsmPrimitive> affectedWays = new ArrayList<>();
+
+            if (removeDuplicateInnerTags) {
+                affectedWays = innerWays.stream().filter(way -> value.equals(way.get(key))).collect(Collectors.toList());
+            }
 
             if (moveTags) {
                 // remove duplicated tags from outer ways
