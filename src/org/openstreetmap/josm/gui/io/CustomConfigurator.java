@@ -3,6 +3,7 @@ package org.openstreetmap.josm.gui.io;
 
 import static org.openstreetmap.josm.tools.I18n.tr;
 
+import java.awt.Component;
 import java.io.ByteArrayInputStream;
 import java.io.CharArrayReader;
 import java.io.CharArrayWriter;
