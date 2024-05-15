@@ -48,7 +48,12 @@ public class DownloadFileTask extends PleaseWaitRunnable {
      * @throws IllegalArgumentException if {@code parent} is null
      */
     public DownloadFileTask(Component parent, String address, File file, boolean mkdir, boolean unpack) {
-        super(parent, tr("Downloading file"), false);
+        if(parent != null) {
+            super(parent, tr("Downloading file"), false);
+        }
+        else {
+            super(tr("Downloading file"), false);
+        }
         this.address = address;
         this.file = file;
         this.mkdir = mkdir;
