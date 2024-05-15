@@ -136,7 +136,13 @@ public final class CustomConfigurator {
             return; // some basic protection
         }
         File fOut = new File(parentDir, path);
-        DownloadFileTask downloadFileTask = new DownloadFileTask(MainApplication.getMainFrame(), address, fOut, mkdir, unzip);
+        Component parent = MainApplication.getMainFrame();
+        DownloadFileTask downloadFileTask = null;
+        if (parent != null) {
+            downloadFileTask = new DownloadFileTask(parent, address, fOut, mkdir, unzip);
+        } else {
+            downloadFileTask = new DownloadFileTask(address, fOut, mkdir, unzip);
+        }
 
         MainApplication.worker.submit(downloadFileTask);
         PreferencesUtils.log("Info: downloading file from %s to %s in background ", parentDir, fOut.getAbsolutePath());
