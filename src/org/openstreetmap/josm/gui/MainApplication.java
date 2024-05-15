@@ -932,6 +932,7 @@ public class MainApplication {
                 try {
                     URL url = i.contains(":/") ? new URL(i) : Paths.get(i).toUri().toURL();
                     Logging.info("Reading preferences from " + url);
+                    HttpClient.setFactory(Http1Client::new);
                     try (InputStream is = Utils.openStream(url)) {
                         config.openAndReadXML(is);
                     }
