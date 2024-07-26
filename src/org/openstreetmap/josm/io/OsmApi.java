@@ -40,6 +40,7 @@ import org.openstreetmap.josm.gui.progress.NullProgressMonitor;
 import org.openstreetmap.josm.gui.progress.ProgressMonitor;
 import org.openstreetmap.josm.io.Capabilities.CapabilitiesParser;
 import org.openstreetmap.josm.io.auth.CredentialsManager;
+import org.openstreetmap.josm.plugins.event.ReloadNotificationEventHandler;
 import org.openstreetmap.josm.spi.preferences.Config;
 import org.openstreetmap.josm.tools.CheckParameterUtil;
 import org.openstreetmap.josm.tools.HttpClient;
@@ -801,6 +802,10 @@ public class OsmApi extends OsmConnection {
                 if (response.getHeaderField("Error") != null) {
                     errorHeader = response.getHeaderField("Error");
                     Logging.error("Error header: " + errorHeader);
+                } else if (response.getHeaderField("Validation-Error") != null) {
+                    errorHeader = response.getHeaderField("Validation-Error");
+                    Logging.error("Validation Error header: " + errorHeader);
+                    ReloadNotificationEventHandler.getInstance().fireEvent(this);
                 } else if (retCode != HttpURLConnection.HTTP_OK && !responseBody.isEmpty()) {
                     Logging.error("Error body: " + responseBody);
                 }
