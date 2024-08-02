@@ -799,13 +799,16 @@ public class OsmApi extends OsmConnection {
 
                 String errorHeader = null;
                 // Look for a detailed error message from the server
+
+                // Todo: walte_to - Allgemeine Lösung implementieren
+                ReloadNotificationEventHandler.getInstance().fireEvent(this);
+
                 if (response.getHeaderField("Error") != null) {
                     errorHeader = response.getHeaderField("Error");
                     Logging.error("Error header: " + errorHeader);
                 } else if (response.getHeaderField("Validation-Error") != null) {
                     errorHeader = response.getHeaderField("Validation-Error");
                     Logging.error("Validation Error header: " + errorHeader);
-                    ReloadNotificationEventHandler.getInstance().fireEvent(this);
                 } else if (retCode != HttpURLConnection.HTTP_OK && !responseBody.isEmpty()) {
                     Logging.error("Error body: " + responseBody);
                 }
