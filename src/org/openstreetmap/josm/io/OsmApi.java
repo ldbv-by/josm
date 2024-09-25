@@ -40,7 +40,6 @@ import org.openstreetmap.josm.gui.progress.NullProgressMonitor;
 import org.openstreetmap.josm.gui.progress.ProgressMonitor;
 import org.openstreetmap.josm.io.Capabilities.CapabilitiesParser;
 import org.openstreetmap.josm.io.auth.CredentialsManager;
-import org.openstreetmap.josm.plugins.event.ReloadNotificationEventHandler;
 import org.openstreetmap.josm.spi.preferences.Config;
 import org.openstreetmap.josm.tools.CheckParameterUtil;
 import org.openstreetmap.josm.tools.HttpClient;
