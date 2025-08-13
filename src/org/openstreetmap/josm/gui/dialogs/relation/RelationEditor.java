@@ -147,7 +147,12 @@ public abstract class RelationEditor extends ExtendedDialog implements IRelation
 
     @Override
     public final boolean isDirtyRelation() {
-        return !relation.hasEqualSemanticAttributes(relationSnapshot);
+        return isDirtyRelation(false);
+    }
+
+    @Override
+    public final boolean isDirtyRelation(boolean ignoreUninterestingTags) {
+        return relation != null && !relation.hasEqualSemanticAttributes(relationSnapshot, ignoreUninterestingTags);
     }
 
     /* ----------------------------------------------------------------------- */

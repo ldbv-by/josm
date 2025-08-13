@@ -37,6 +37,7 @@ import org.openstreetmap.josm.io.OsmReader;
 import org.openstreetmap.josm.testutils.annotations.BasicPreferences;
 import org.openstreetmap.josm.testutils.annotations.Main;
 import org.openstreetmap.josm.testutils.annotations.Projection;
+import org.openstreetmap.josm.testutils.annotations.Territories;
 import org.openstreetmap.josm.tools.MultiMap;
 import org.openstreetmap.josm.tools.Utils;
 
@@ -46,6 +47,7 @@ import org.openstreetmap.josm.tools.Utils;
 @BasicPreferences
 @Main
 @Projection
+@Territories
 class JoinAreasActionTest {
     /**
      * Non-regression test for bug #9599.
@@ -56,6 +58,7 @@ class JoinAreasActionTest {
     void testTicket9599() throws IOException, IllegalDataException {
         try (InputStream is = TestUtils.getRegressionDataStream(9599, "ex5.osm")) {
             DataSet ds = OsmReader.parseDataSet(is, null);
+            ds.allPrimitives().forEach(p -> p.setReferrersDownloaded(true));
             Layer layer = new OsmDataLayer(ds, null, null);
             MainApplication.getLayerManager().addLayer(layer);
             try {
@@ -80,6 +83,7 @@ class JoinAreasActionTest {
         try (InputStream is = TestUtils.getRegressionDataStream(9599, "three_old.osm")) {
             DataSet ds = OsmReader.parseDataSet(is, null);
             ds.addDataSource(new DataSource(new Bounds(-90, -180, 90, 180), "Everywhere"));
+            ds.allPrimitives().forEach(p -> p.setReferrersDownloaded(true));
             Layer layer = new OsmDataLayer(ds, null, null);
             MainApplication.getLayerManager().addLayer(layer);
             try {
@@ -152,6 +156,7 @@ class JoinAreasActionTest {
         try (InputStream is = TestUtils.getRegressionDataStream(18744, "18744-sample.osm")) {
             DataSet ds = OsmReader.parseDataSet(is, null);
             ds.addDataSource(new DataSource(new Bounds(-90, -180, 90, 180), "Everywhere"));
+            ds.allPrimitives().forEach(p -> p.setReferrersDownloaded(true));
             Layer layer = new OsmDataLayer(ds, null, null);
             MainApplication.getLayerManager().addLayer(layer);
             try {
